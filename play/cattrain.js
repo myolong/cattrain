@@ -614,7 +614,7 @@ function drawTrain(t) {
   const segs = t.segs;
   const tc = tailColor(t);
   const tail = t.tail && D.TAILS[t.tail];
-  const pts = tail ? [{ x: t.x, y: t.y, a: t.a }].concat(segs) : null;
+  const pts = tail ? [{ x: t.x, y: t.y, a: t.a, hr: r / kr }].concat(segs) : null;
   if (tail && tail.under) tail.under(ctx, pts, kr, clock);
   if (segs.length) {
     ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = r * 0.45; ctx.lineCap = 'round'; ctx.lineJoin = 'round';

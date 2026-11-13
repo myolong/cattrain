@@ -111,6 +111,12 @@ function star(g, x, y, r1, r2) {
 
 // 꼬리 장식. pts: 머리부터 꼬리까지 [{x, y, a}] (a는 앞쪽을 보는 방향), kr: 아기냥 반지름, clock: 초.
 // under: 아기냥 아래에 깔리는 것(색동 띠), over: 아기냥 위에 뜨는 것.
+// 옆으로 f만큼(아기냥 반지름 단위) 비켜난 자리. 머리(p.hr: 머리가 아기냥보다 큰 배율)는 더 바깥으로 빼서 가리지 않게.
+function beside(p, kr, f, side) {
+  const d = kr * (f + (p.hr ? p.hr - 1 : 0)) * side;
+  return { x: p.x - Math.sin(p.a) * d, y: p.y + Math.cos(p.a) * d };
+}
+
 export const TAILS = {
   saekdong: {
     under(g, pts, kr) {
@@ -133,14 +139,13 @@ export const TAILS = {
     // 전구 줄은 아기냥 뒤로 지나가고, 전구는 양옆으로 번갈아 삐져나오게 (얼굴을 가리지 않게)
     under(g, pts, kr, clock) {
       const cs = ['#ff4d4d', '#ffd23f', '#4dd2ff', '#7cff6b'];
-      const side = (p, f) => ({ x: p.x - Math.sin(p.a) * kr * f, y: p.y + Math.cos(p.a) * kr * f });
       const bulbs = [];
       g.strokeStyle = '#2f6b3a'; g.lineWidth = Math.max(1.5, kr * 0.12); g.lineCap = 'round'; g.lineJoin = 'round';
       g.beginPath();
       for (let i = 0; i < pts.length; i++) {
-        const q = side(pts[i], i % 2 ? 1.4 : -1.4);
+        const q = beside(pts[i], kr, 1.4, i % 2 ? 1 : -1);
         i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y);
-        if (i > 0) bulbs.push(q);
+        bulbs.push(q);
       }
       g.stroke();
       const blink = Math.floor(clock * 2.5);
@@ -159,8 +164,8 @@ export const TAILS = {
       const s = kr * 0.45;
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i], side = i % 2 ? 1 : -1, f = 1.15 + 0.2 * Math.sin(clock * 2 + i);
-        const x = p.x - Math.sin(p.a) * kr * f * side, y = p.y + Math.cos(p.a) * kr * f * side;
-        g.save(); g.translate(x, y); g.rotate(clock * 0.8 + i);
+        const q = beside(p, kr, f, side);
+        g.save(); g.translate(q.x, q.y); g.rotate(clock * 0.8 + i);
         for (let j = 0; j < 3; j++) { g.rotate(Math.PI / 3); g.beginPath(); g.moveTo(-s, 0); g.lineTo(s, 0); g.stroke(); }
         g.restore();
       }
@@ -170,17 +175,16 @@ export const TAILS = {
     over(g, pts, kr, clock) {
       const cs = ['#ffcf3f', '#ff5a8a', '#5ad0ff', '#9bff6b'];
       g.lineCap = 'round'; g.lineWidth = Math.max(1.5, kr * 0.12);
-      // 꼬리 쪽 몇 군데에서 차례로 터진다
-      const n = Math.min(4, pts.length);
-      for (let j = 0; j < n; j++) {
-        const idx = Math.max(0, pts.length - 1 - j * 3);
-        const p = pts[idx];
+      // 머리부터 꼬리까지 모든 자리에서 박자를 엇갈려 차례로 터진다
+      for (let j = 0; j < pts.length; j++) {
+        const p = pts[j];
         const ph = (clock * 0.9 + j * 0.37) % 1;
-        const side = j % 2 ? 1 : -1;
-        const cx = p.x - Math.sin(p.a) * kr * 1.4 * side, cy = p.y + Math.cos(p.a) * kr * 1.4 * side;
+        const q = beside(p, kr, 1.4, j % 2 ? 1 : -1);
         const r1 = kr * (0.2 + ph * 0.9), r2 = kr * (0.45 + ph * 1.1);
         g.globalAlpha = 1 - ph; g.strokeStyle = cs[j % 4];
-        for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.beginPath(); g.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2); g.stroke(); }
+        g.beginPath();
+        for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.moveTo(q.x + Math.cos(a) * r1, q.y + Math.sin(a) * r1); g.lineTo(q.x + Math.cos(a) * r2, q.y + Math.sin(a) * r2); }
+        g.stroke();
       }
       g.globalAlpha = 1;
     },
@@ -192,8 +196,8 @@ export const TAILS = {
         const p = pts[i];
         for (const [f, side, ph] of [[1.2, -1, 0], [1.3, 1, 2.1]]) {
           const ff = f + 0.15 * Math.sin(clock * 1.6 + i + ph);
-          const x = p.x - Math.sin(p.a) * kr * ff * side, y = p.y + Math.cos(p.a) * kr * ff * side;
-          g.save(); g.translate(x, y); g.rotate(clock + i + ph);
+          const q = beside(p, kr, ff, side);
+          g.save(); g.translate(q.x, q.y); g.rotate(clock + i + ph);
           g.beginPath(); g.ellipse(0, 0, kr * 0.22, kr * 0.36, 0, 0, 7); g.fill();
           g.restore();
         }
@@ -206,8 +210,8 @@ export const TAILS = {
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i], side = i % 2 ? 1 : -1;
         const tw = 0.6 + 0.4 * Math.sin(clock * 5 + i * 1.7);
-        const x = p.x - Math.sin(p.a) * kr * 1.25 * side, y = p.y + Math.cos(p.a) * kr * 1.25 * side;
-        star(g, x, y, kr * 0.48 * tw, kr * 0.2 * tw);
+        const q = beside(p, kr, 1.25, side);
+        star(g, q.x, q.y, kr * 0.48 * tw, kr * 0.2 * tw);
       }
     },
   },
