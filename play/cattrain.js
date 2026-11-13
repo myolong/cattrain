@@ -136,6 +136,12 @@ const SEASON = (function () {
 })();
 const SNOW = SEASON === 'snow', FALL = SEASON === 'fall';
 const OUTSIDE = SNOW ? '#9fb9cf' : FALL ? '#a4783f' : '#5c9a59';
+// 아주 옅은 큰 격자: 움직일 때 속도감이 느껴지게 (한 칸 120px, 밝고 어두운 칸만 살짝 다르게)
+function softChecker(g, W, col) {
+  const n = W / 120;
+  g.fillStyle = col;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if ((i + j) % 2 === 0) g.fillRect(i * 120, j * 120, 120, 120);
+}
 const LEAF_COLORS = ['#e8572a', '#f29a2e', '#f5c242', '#c9402c', '#d9772b'];
 // 단풍잎 하나 (g 위에 x,y, 크기 r, 회전 a)
 function drawLeaf(g, x, y, r, a, color) {
@@ -196,6 +202,7 @@ const groundTile = (function () {
         g.fillStyle = gr; g.beginPath(); g.arc(x + ox, y + oy, r, 0, 7); g.fill();
       });
     }
+    softChecker(g, W, 'rgba(110,150,200,.045)');
     // 바람에 쓸린 눈 결
     g.strokeStyle = 'rgba(170,198,228,.35)'; g.lineWidth = 1.4; g.lineCap = 'round';
     for (let k = 0; k < 18; k++) {
@@ -244,6 +251,7 @@ const groundTile = (function () {
         g.fillStyle = gr; g.beginPath(); g.arc(x + ox, y + oy, r, 0, 7); g.fill();
       });
     }
+    softChecker(g, W, 'rgba(150,100,30,.05)');
     // 짧은 풀잎 결
     g.strokeStyle = 'rgba(190,140,70,.22)'; g.lineWidth = 1.3; g.lineCap = 'round';
     for (let k = 0; k < 40; k++) {
@@ -264,8 +272,8 @@ const groundTile = (function () {
     return ctx.createPattern(c, 'repeat');
   }
   g.fillStyle = '#8fd18a'; g.fillRect(0, 0, 224, 224);
-  g.fillStyle = '#86c981';
-  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2 === 0) g.fillRect(i * 56, j * 56, 56, 56);
+  g.fillStyle = '#89cc84';
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) g.fillRect(i * 112, j * 112, 112, 112);
   for (let k = 0; k < 7; k++) {
     const x = 8 + Math.random() * 208, y = 8 + Math.random() * 208;
     g.fillStyle = ['#fff', '#ffe680', '#ffb3c7'][k % 3];
