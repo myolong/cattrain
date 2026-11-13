@@ -990,14 +990,53 @@ passBtn.addEventListener('click', async () => {
   passBtn.disabled = false;
   renderShop();
 });
-$('shop-btn').addEventListener('click', () => {
+// 첫 화면 꾸미기 버튼 안에서 모자·꼬리 장식을 돌아가며 보여 준다 (눈에 띄게)
+const shopBtnPic = miniCanvas(120, 64);
+$('shop-btn-pic').append(shopBtnPic.c);
+const SHOWCASE = [['santa', 'firework', 'gold'], ['gat', 'saekdong', 'orange'], ['sombrero', 'stars', 'calico'], ['antler', 'lights', 'rudolph'], ['sakura', 'petals', 'sakura'], ['party', 'snow', 'snow']];
+function shopBtnFrame() {
+  if (!startEl.hidden) {
+    const s = SHOWCASE[Math.floor(Math.max(0, clock) / 1.8) % SHOWCASE.length];
+    drawMini(shopBtnPic.g, 120, 64, { x: 92, y: 36, a: 0, r: 17, len: 3, fur: s[2], hat: s[0], tail: s[1], wave: true });
+  }
+  requestAnimationFrame(shopBtnFrame);
+}
+requestAnimationFrame(shopBtnFrame);
+
+function openShop() {
   renderShop();
   // 모달로 열면 브라우저 맨 위층에 떠서 광고가 그 밑에 깔린다. 그래서 보통 창으로 연다.
   shopEl.show();
   if (!shopAnim) shopAnim = requestAnimationFrame(shopFrame);
+}
+$('shop-btn').addEventListener('click', openShop);
+let shopFromResult = false;
+shopEl.addEventListener('close', () => {
+  paintFurs();
+  // 결과 창에서 꾸미러 왔으면, 바뀐 모습으로 결과 창에 돌아간다
+  if (shopFromResult) {
+    shopFromResult = false;
+    run.fur = chosenFur; run.hat = deco.hat; run.tail = deco.tail;
+    dialog.returnValue = '';
+    dialog.showModal();
+  }
 });
-shopEl.addEventListener('close', () => { paintFurs(); });
 if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) $('pc-tip').hidden = false;
+else {
+  // PC(마우스) 조작 설명
+  $('rule-move').textContent = '🖱️ 마우스를 가고 싶은 쪽에 두면 따라가요';
+  $('rule-dash').textContent = '💨 마우스를 누르고 있거나 스페이스바를 누르면 달려요';
+}
+// 규칙 설명의 독버섯·양파 그림은 게임 화면과 똑같이 그린다
+for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', drawOnion, 19, 0.85]]) {
+  const m = miniCanvas(32, 32);
+  m.c.style.width = m.c.style.height = '1.3em';
+  const prev = ctx; ctx = m.g;
+  m.g.translate(16, cy); m.g.scale(k, k);
+  fn({ x: 0, y: 0, vx: 0 });
+  ctx = prev;
+  const el = $(id); el.textContent = ''; el.append(m.c);
+}
 nameEl.value = load(NAME_KEY, '');
 if (SERVER) $('mode-note').hidden = false;
 
@@ -1092,6 +1131,7 @@ function showResult(info) {
 
 dialog.addEventListener('close', () => {
   if (state !== 'result') return;
+  if (dialog.returnValue === 'deco') { shopFromResult = true; openShop(); return; }
   const cont = dialog.returnValue === 'continue' && !run.continued;
   // 이어하기는 나중에 보상형 광고를 붙일 자리. 지금은 한 판에 한 번 그냥 이어 할 수 있다.
   if (cont) run.continued = true;
