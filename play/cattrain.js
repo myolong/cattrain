@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
 let ctx = canvas.getContext('2d');   // 꾸미기 미리보기를 그릴 때 잠깐 바꿔 끼운다
 const FONT = '"Jua", -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+const EMOTES = ['냥! 👋', '😻', '따라와!', '비켜~', '😿', '고마워!'];
 const { WORLD, GAUGE_MAX, START_LEN, FUR_KEYS, PICK_FURS, SCARVES, FISH_COLORS, LEADER_FURS, SPECIAL_FURS, HAT_KEYS, TAIL_KEYS, FACE_KEYS } = S;
 
 const BEST_KEY = 'nyang-cattrain-best';
@@ -330,7 +331,7 @@ function localScene() {
   const top = order[0];
   const trains = local.trains.filter((t) => t.alive).map((t) => ({
     id: t.id, name: t.name, fur: t.fur, scarf: t.scarf, bot: t.bot, x: t.x, y: t.y, a: t.a, hat: t.hat, tail: t.tail, face: t.face,
-    kids: t.kids, segs: smoothSegs(t), dash: t.dashNow, invul: t.invul > 0, crown: t === top,
+    kids: t.kids, segs: smoothSegs(t), dash: t.dashNow, invul: t.invul > 0, crown: t === top, emote: S.emoteNow(local, t),
   }));
   const me = localMe && localMe.alive ? trains.find((t) => t.id === localMe.id) : null;
   const kittens = local.kittens.map((k) => ({ x: k.x, y: k.y, fur: k.fur, wild: k.wild, old: !k.wild && local.now - k.born > 26, a: k.a, seed: k.born }));
@@ -584,6 +585,7 @@ function rowToTrain(r) {
     id: r[0], x: r[1], y: r[2], a: r[3] / 100, fur: LEADER_FURS[r[4]] || 'orange', scarf: SCARVES[r[5]] || SCARVES[1],
     hat: HAT_KEYS[(r[10] || 0) - 1] || '', tail: TAIL_KEYS[(r[11] || 0) - 1] || '', face: FACE_KEYS[(r[12] || 0) - 1] || '',
     bot: !!(r[6] & 1), dash: !!(r[6] & 2), invul: !!(r[6] & 4), crown: !!(r[6] & 8), name: r[7], kids: kids, segs: segs,
+    emote: (r[13] || 0) - 1,
   };
 }
 
@@ -904,6 +906,7 @@ function render() {
     // 다른 사람 이름은 노란색으로 컴퓨터 냥이와 구분한다.
     const color = t === me || t.bot ? '#fff' : '#fff6a8';
     text(label, t.x, t.y - headR(t) * 1.9, 12 / z + 2, color, 'center', ['rgba(0,0,0,.5)', 3.5]);
+    if (t.emote >= 0 && EMOTES[t.emote]) drawEmote(t, EMOTES[t.emote], z);
   }
   if (death && (state === 'dying' || state === 'result')) {
     drawSprite(sprites[death.fur].dizzy, death.x, death.y, 16, death.a);
@@ -921,6 +924,17 @@ function render() {
   if (FALL) drawLeaffall(fdt);
   render.lastClock = clock;
   if (state === 'play' || state === 'dying') drawHud();
+}
+
+// 대장 냥이 머리 위 말풍선
+function drawEmote(t, msg, z) {
+  const fs = 15 / z + 3, y = t.y - headR(t) * 1.9 - fs * 1.9;
+  ctx.font = fs + 'px Jua, sans-serif';
+  const w = Math.max(fs * 2.2, ctx.measureText(msg).width + fs * 1.2), h = fs * 1.7;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#e36d0e'; ctx.lineWidth = 2 / z + 0.5;
+  rrect(t.x - w / 2, y - h / 2, w, h, h / 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(t.x - fs * 0.35, y + h / 2 - 1); ctx.lineTo(t.x, y + h / 2 + fs * 0.5); ctx.lineTo(t.x + fs * 0.35, y + h / 2 - 1); ctx.closePath(); ctx.fill();
+  text(msg, t.x, y, fs, '#8a4a12');
 }
 
 function drawHud() {
@@ -1045,6 +1059,28 @@ window.addEventListener('keyup', (e) => {
   input.keys[e.key] = false;
   input.keyTurn = (input.keys.ArrowRight ? 1 : 0) - (input.keys.ArrowLeft ? 1 : 0);
   syncDash();
+});
+
+// ───── 냥! 말풍선 보내기 ─────
+const emoteBtn = $('emote-btn'), emoteMenu = $('emote-menu');
+let emoteReady = 0;
+function sendEmote(e) {
+  if (state !== 'play' || clock < emoteReady) return;
+  emoteReady = clock + S.EMOTE_GAP;
+  if (mode === 'online') sendNet({ t: 'emote', e: e });
+  else if (localMe) S.setEmote(local, localMe, e);
+  emoteMenu.hidden = true;
+}
+EMOTES.forEach((m, i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = m;
+  b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); sendEmote(i); });
+  emoteMenu.append(b);
+});
+emoteBtn.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); emoteMenu.hidden = !emoteMenu.hidden; });
+window.addEventListener('keydown', (e) => {
+  const n = Number(e.key);
+  if (state === 'play' && n >= 1 && n <= EMOTES.length && document.activeElement !== nameEl) sendEmote(n - 1);
 });
 
 // ───── 시작 화면 ─────
@@ -1329,6 +1365,7 @@ if (SERVER) {
 
 function beginPlay() {
   startEl.hidden = true;
+  $('emote').hidden = false; emoteMenu.hidden = true;
   state = 'play';
   tapDashPointer = null; input.mouseDash = false; input.keys = {}; input.keyTurn = 0; syncDash();
   hintUntil = clock + 4;
@@ -1382,6 +1419,7 @@ function fmtTime(sec) {
 }
 
 function onDead(info) {
+  $('emote').hidden = true;
   if (state !== 'play') return;
   death = info;
   state = 'dying';
