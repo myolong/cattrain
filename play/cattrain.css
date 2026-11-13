@@ -78,14 +78,14 @@ body.cattrain {
 
 .panel .label { margin: 0 0 6px; font-size: 15px; }
 
-.furs { display: flex; justify-content: space-around; }
+.furs { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; }
 
 .furs button {
-  width: 54px;
-  height: 54px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   border: 4px solid transparent;
-  background: none center / 46px no-repeat;
+  background: none center / 42px no-repeat;
   padding: 0;
 }
 
@@ -199,3 +199,67 @@ body.cattrain {
   font-size: 16px;
 }
 
+
+/* 꾸미기 */
+.shop-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 14px;
+  padding: 8px 0;
+  background: #ffe0ec;
+  color: #b0306a;
+  font: inherit;
+  font-size: 17px;
+}
+.shop-btn small { font-size: 12px; color: #c0628c; margin-left: 4px; }
+.pc-tip { margin: -4px 0 10px; font-size: 14px; color: #6a4a8a; background: rgba(255, 255, 255, 0.7); border-radius: 12px; padding: 6px 8px; }
+.pc-tip[hidden] { display: none; }
+
+#shop {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: 50;
+  overflow-y: auto;
+  box-shadow: 0 0 0 100vmax rgba(30, 20, 10, 0.55);
+  border: 0;
+  border-radius: 26px;
+  padding: 16px 12px 14px;
+  width: min(440px, calc(100% - 20px));
+  max-height: calc(100% - 24px);
+  background: #fff8ee;
+  color: #6a3a12;
+  font-family: inherit;
+}
+.shop-head { display: flex; align-items: center; justify-content: space-between; }
+.shop-title { margin: 0; font-size: 24px; color: #b4500a; }
+.shop-close { border: 0; background: #f0dcc0; color: #8a4a12; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; }
+.shop-sub { margin: 2px 0 8px; font-size: 13px; color: #9a7a5a; }
+.shop-preview { background: #8fd18a; border: 3px solid #fff; border-radius: 18px; display: flex; justify-content: center; box-shadow: 0 3px 10px rgba(80, 50, 20, 0.15); }
+.shop-preview canvas { max-width: 100%; height: auto; }
+#shop h3 { margin: 16px 0 8px; font-size: 18px; font-weight: 400; color: #8a4a12; text-align: left; }
+#shop .items { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#shop .items li {
+  position: relative;
+  background: #fff;
+  border: 2px solid #f3dcc4;
+  border-radius: 16px;
+  padding: 6px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+#shop .items li.locked::after { content: '🔒'; position: absolute; top: 4px; right: 6px; font-size: 13px; }
+#shop .items canvas { max-width: 100%; height: auto; }
+#shop .items b { font-weight: 400; font-size: 14px; }
+#shop .tag { font-size: 11px; color: #fff; border-radius: 8px; padding: 0 7px; }
+#shop .items button { width: 100%; border: 0; border-radius: 10px; padding: 6px 0; font: inherit; font-size: 13px; margin-top: 2px; }
+#shop .items button.ad { background: #22a35a; color: #fff; }
+#shop .items button.use { background: #f1e6da; color: #6a3a12; }
+#shop .items button.on { background: #ff8a2a; color: #fff; }
+#shop .items button:disabled { opacity: 0.6; }
+.shop-note { margin: 12px 0 6px; font-size: 12px; color: #9a7a5a; text-align: left; }
+.shop-done { width: 100%; border: 0; border-radius: 16px; padding: 12px 0; background: #ff8a2a; color: #fff; font: inherit; font-size: 19px; }
