@@ -124,15 +124,34 @@ function drawSprite(img, x, y, r, a) {
   ctx.restore();
 }
 
-// 계절 맵: 12월~2월에는 눈 오는 놀이터. 주소 끝에 ?season=snow / ?season=grass 로 미리 볼 수 있다.
-const SNOW = (function () {
+// 계절 맵: 11월은 낙엽 놀이터, 12월~2월은 눈 오는 놀이터, 나머지는 풀밭.
+// 주소 끝에 ?season=snow / ?season=fall / ?season=grass 로 미리 볼 수 있다.
+const SEASON = (function () {
   const q = new URLSearchParams(location.search).get('season');
-  if (q === 'snow') return true;
-  if (q === 'grass') return false;
+  if (q === 'snow' || q === 'fall' || q === 'grass') return q;
   const m = new Date().getMonth() + 1;
-  return m === 12 || m <= 2;
+  if (m === 11) return 'fall';
+  if (m === 12 || m <= 2) return 'snow';
+  return 'grass';
 })();
-const OUTSIDE = SNOW ? '#9fb9cf' : '#5c9a59';
+const SNOW = SEASON === 'snow', FALL = SEASON === 'fall';
+const OUTSIDE = SNOW ? '#9fb9cf' : FALL ? '#9a7a45' : '#5c9a59';
+const LEAF_COLORS = ['#e8572a', '#f29a2e', '#f5c242', '#c9402c', '#d9772b'];
+// 단풍잎 하나 (g 위에 x,y, 크기 r, 회전 a)
+function drawLeaf(g, x, y, r, a, color) {
+  g.save(); g.translate(x, y); g.rotate(a);
+  g.fillStyle = color;
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const t = -Math.PI / 2 + i * Math.PI / 5;
+    const rr = i % 2 ? r * 0.45 : r * (i === 0 ? 1 : 0.85);
+    g.lineTo(Math.cos(t) * rr, Math.sin(t) * rr);
+  }
+  g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(120,50,20,.55)'; g.lineWidth = Math.max(0.8, r * 0.1);
+  g.beginPath(); g.moveTo(0, r * 0.2); g.lineTo(0, r * 1.15); g.stroke();
+  g.restore();
+}
 
 const groundTile = (function () {
   const c = document.createElement('canvas');
@@ -159,6 +178,21 @@ const groundTile = (function () {
     }
     return ctx.createPattern(c, 'repeat');
   }
+  if (FALL) {
+    // 가을 풀밭: 누렇게 물든 잔디 + 떨어진 단풍잎·은행잎 + 도토리
+    g.fillStyle = '#d9c27a'; g.fillRect(0, 0, 224, 224);
+    g.fillStyle = '#cfb66c';
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2 === 0) g.fillRect(i * 56, j * 56, 56, 56);
+    for (let k = 0; k < 9; k++) {
+      drawLeaf(g, 10 + Math.random() * 204, 10 + Math.random() * 204, 5 + Math.random() * 3, Math.random() * 7, LEAF_COLORS[k % LEAF_COLORS.length]);
+    }
+    for (let k = 0; k < 2; k++) {
+      const x = 20 + Math.random() * 184, y = 20 + Math.random() * 184;
+      g.fillStyle = '#9b6a35'; g.beginPath(); g.ellipse(x, y + 2, 3.2, 4, 0, 0, 7); g.fill();
+      g.fillStyle = '#6e4622'; g.beginPath(); g.ellipse(x, y - 1.5, 3.8, 2, 0, 0, 7); g.fill();
+    }
+    return ctx.createPattern(c, 'repeat');
+  }
   g.fillStyle = '#8fd18a'; g.fillRect(0, 0, 224, 224);
   g.fillStyle = '#86c981';
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2 === 0) g.fillRect(i * 56, j * 56, 56, 56);
@@ -173,6 +207,19 @@ const groundTile = (function () {
 
 // 화면 위로 내리는 눈송이 (화면 기준이라 서버와 상관없다)
 const flakes = SNOW ? Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), r: 1.5 + Math.random() * 2.5, v: 0.05 + Math.random() * 0.07, w: Math.random() * 6 })) : [];
+// 가을에는 낙엽이 천천히 빙글빙글 떨어진다
+const leaves = FALL ? Array.from({ length: 10 }, (_, i) => ({ x: Math.random(), y: Math.random(), r: 6 + Math.random() * 4, v: 0.04 + Math.random() * 0.04, w: Math.random() * 6, a: Math.random() * 7, c: LEAF_COLORS[i % LEAF_COLORS.length] })) : [];
+function drawLeaffall(dt) {
+  ctx.globalAlpha = 0.9;
+  for (const f of leaves) {
+    f.y += f.v * dt;
+    f.a += dt * (0.8 + f.w * 0.15);
+    if (f.y > 1.05) { f.y = -0.05; f.x = Math.random(); }
+    const x = (f.x + Math.sin(clock * 0.9 + f.w) * 0.04) * vw, y = f.y * vh;
+    drawLeaf(ctx, x, y, f.r, f.a, f.c);
+  }
+  ctx.globalAlpha = 1;
+}
 function drawSnowfall(dt) {
   ctx.fillStyle = 'rgba(255,255,255,.85)';
   for (const f of flakes) {
@@ -757,7 +804,9 @@ function render() {
     ctx.globalAlpha = 1;
   }
   ctx.restore();
-  if (SNOW) drawSnowfall(Math.min(0.05, clock - (render.lastClock || clock)));
+  const fdt = Math.min(0.05, clock - (render.lastClock || clock));
+  if (SNOW) drawSnowfall(fdt);
+  if (FALL) drawLeaffall(fdt);
   render.lastClock = clock;
   if (state === 'play' || state === 'dying') drawHud();
 }
@@ -1101,6 +1150,7 @@ for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', 
 nameEl.value = load(NAME_KEY, '');
 if (SERVER) $('mode-note').hidden = false;
 if (SNOW) document.querySelector('.start .site').textContent = '❄️ 겨울 한정 · 눈 오는 놀이터';
+if (FALL) document.querySelector('.start .site').textContent = '🍁 가을 한정 · 낙엽 놀이터';
 
 // ───── 친구 초대: 주소의 ?room=코드 로 같은 친구 방에 들어간다 ─────
 const ROOM_RE = /^[a-z0-9]{5,8}$/;
