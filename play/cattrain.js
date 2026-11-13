@@ -3,6 +3,7 @@
 // 서버가 없거나 연결이 안 되면 컴퓨터 냥이들과 혼자 논다.
 import * as S from './sim.js';
 import * as D from './deco.js';
+import { drawCatFace3D } from './face3d.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
@@ -98,13 +99,17 @@ function drawCatFace(g, fur, face) {
   }
   g.restore();
 }
+// ?flat=1 이면 예전 납작한 그림 (비교용)
+const FLAT = /[?&]flat=1/.test(location.search);
 const sprites = {};
 for (const fur of LEADER_FURS) {
   sprites[fur] = {};
   for (const face of ['normal', 'happy', 'dizzy']) {
     const c = document.createElement('canvas');
     c.width = c.height = SPR;
-    drawCatFace(c.getContext('2d'), fur, face);
+    const g = c.getContext('2d');
+    if (FLAT) drawCatFace(g, fur, face);
+    else { g.translate(SPR / 2, SPR / 2 + 6); drawCatFace3D(g, SR, fur, FURS[fur], face, D.NOSE[fur]); }
     sprites[fur][face] = c;
   }
 }
@@ -621,7 +626,10 @@ function drawTrain(t) {
     const s = segs[i];
     const face = (i + Math.floor(clock * 0.7)) % 4 === 0 ? 'happy' : 'normal';
     drawCollar(s.x, s.y, kr, s.a, tc);
-    drawSprite((sprites[t.kids[i]] || sprites.orange)[face], s.x, s.y, kr, s.a);
+    // 통통 걷기: 아기냥마다 박자를 조금씩 늦춰 앞에서 뒤로 물결치듯
+    const ph = clock * 11 - i * 0.9;
+    const hop = Math.max(0, Math.sin(ph));
+    drawSprite((sprites[t.kids[i]] || sprites.orange)[face], s.x, s.y, kr * (1 + hop * 0.07), s.a + Math.sin(ph * 0.5) * 0.14);
   }
   if (tail && tail.over && pts.length > 1) tail.over(ctx, pts, kr, clock);
   ctx.save();
@@ -629,7 +637,7 @@ function drawTrain(t) {
   ctx.fillStyle = tc;
   ctx.beginPath(); ctx.ellipse(0, r * 0.85, r * 0.78, r * 0.24, 0, 0, 7); ctx.fill();
   ctx.restore();
-  drawSprite((sprites[t.fur] || sprites.orange).normal, t.x, t.y, r, t.a);
+  drawSprite((sprites[t.fur] || sprites.orange).normal, t.x, t.y, r * (1 + Math.max(0, Math.sin(clock * 11 + 0.9)) * 0.05), t.a + Math.sin(clock * 5.5) * 0.08);
   if (t.hat && D.HATS[t.hat]) {
     ctx.save();
     ctx.translate(t.x, t.y); ctx.rotate(t.a + Math.PI / 2);
