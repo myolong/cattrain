@@ -113,6 +113,8 @@ body.cattrain {
   background: none;
 }
 
+.rules .ri { display: inline-block; margin-right: 0.2em; vertical-align: -0.25em; }
+.rules .ri canvas { display: block; }
 .rules {
   list-style: none;
   margin: 12px 0;

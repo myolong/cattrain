@@ -996,7 +996,7 @@ $('shop-btn-pic').append(shopBtnPic.c);
 const SHOWCASE = [['santa', 'firework', 'gold'], ['gat', 'saekdong', 'orange'], ['sombrero', 'stars', 'calico'], ['antler', 'lights', 'rudolph'], ['sakura', 'petals', 'sakura'], ['party', 'snow', 'snow']];
 function shopBtnFrame() {
   if (!startEl.hidden) {
-    const s = SHOWCASE[Math.floor(clock / 1.8) % SHOWCASE.length];
+    const s = SHOWCASE[Math.floor(Math.max(0, clock) / 1.8) % SHOWCASE.length];
     drawMini(shopBtnPic.g, 120, 64, { x: 92, y: 36, a: 0, r: 17, len: 3, fur: s[2], hat: s[0], tail: s[1], wave: true });
   }
   requestAnimationFrame(shopBtnFrame);
@@ -1022,6 +1022,21 @@ shopEl.addEventListener('close', () => {
   }
 });
 if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) $('pc-tip').hidden = false;
+else {
+  // PC(마우스) 조작 설명
+  $('rule-move').textContent = '🖱️ 마우스를 가고 싶은 쪽에 두면 따라가요';
+  $('rule-dash').textContent = '💨 마우스를 누르고 있거나 스페이스바를 누르면 달려요';
+}
+// 규칙 설명의 독버섯·양파 그림은 게임 화면과 똑같이 그린다
+for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', drawOnion, 19, 0.85]]) {
+  const m = miniCanvas(32, 32);
+  m.c.style.width = m.c.style.height = '1.3em';
+  const prev = ctx; ctx = m.g;
+  m.g.translate(16, cy); m.g.scale(k, k);
+  fn({ x: 0, y: 0, vx: 0 });
+  ctx = prev;
+  const el = $(id); el.textContent = ''; el.append(m.c);
+}
 nameEl.value = load(NAME_KEY, '');
 if (SERVER) $('mode-note').hidden = false;
 
