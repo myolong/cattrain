@@ -160,6 +160,7 @@ body.cattrain {
   padding: 7px 8px; font-size: 13px; color: #333; background: #fff; text-align: center;
   user-select: all; -webkit-user-select: all;
 }
+.start .invite-row button[hidden] { display: none; }
 .start .invite-row { display: flex; gap: 8px; margin-top: 8px; }
 .start .invite-row button {
   flex: 1; border: 0; border-radius: 12px; padding: 9px 0; background: #4aa3c9;

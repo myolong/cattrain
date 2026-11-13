@@ -1141,6 +1141,9 @@ if (SERVER) {
     $('invite-msg').textContent = '이 링크를 친구에게 보내 주세요. 링크로 들어온 친구와 같은 놀이터에서 만나요!';
   });
   $('tab-all').addEventListener('click', () => setFriendRoom(''));
+  // '보내기'(카톡·문자 앱 목록)는 폰에서만 보이고, PC에서는 링크 복사만 둔다.
+  const isPhone = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  if (!isPhone || !navigator.share) $('invite-share').hidden = true;
   const copyBtn = $('invite-copy');
   copyBtn.addEventListener('click', async () => {
     const link = $('invite-link').value;
