@@ -237,6 +237,9 @@ body.cattrain {
 .shop-title { margin: 0; font-size: 24px; color: #b4500a; }
 .shop-close { border: 0; background: #f0dcc0; color: #8a4a12; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; }
 .shop-sub { margin: 2px 0 8px; font-size: 13px; color: #9a7a5a; }
+.shop-pass { display: block; width: 100%; border: 0; border-radius: 14px; padding: 12px; margin: 0 0 10px; background: #22a35a; color: #fff; font: inherit; font-family: 'Jua', sans-serif; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 #17803f; }
+.shop-pass[hidden] { display: none; }
+.shop-pass:disabled { opacity: .6; }
 .shop-preview { background: #8fd18a; border: 3px solid #fff; border-radius: 18px; display: flex; justify-content: center; box-shadow: 0 3px 10px rgba(80, 50, 20, 0.15); }
 .shop-preview canvas { max-width: 100%; height: auto; }
 #shop h3 { margin: 16px 0 8px; font-size: 18px; font-weight: 400; color: #8a4a12; text-align: left; }
