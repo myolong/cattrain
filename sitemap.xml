@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://nyangtrain.com/</loc></url>
-  <url><loc>https://nyangtrain.com/play/</loc></url>
-  <url><loc>https://nyangtrain.com/guide.html</loc></url>
-  <url><loc>https://nyangtrain.com/about.html</loc></url>
-  <url><loc>https://nyangtrain.com/privacy.html</loc></url>
+  <url><loc>https://nyangtrain.com/</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://nyangtrain.com/play/</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://nyangtrain.com/guide.html</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://nyangtrain.com/about.html</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://nyangtrain.com/privacy.html</loc><lastmod>2026-11-13</lastmod></url>
 </urlset>
