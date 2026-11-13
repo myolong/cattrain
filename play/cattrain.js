@@ -340,6 +340,7 @@ function localScene() {
     lb: order.slice(0, 5).map((t) => ({ name: t.name, bot: t.bot, len: t.kids.length, id: t.id })),
     my: me ? { rank: myIdx + 1, len: me.kids.length, gauge: Math.floor(localMe.gauge) } : null,
     mm: local.trains.filter((t) => t.alive).map((t) => ({ x: t.x, y: t.y, len: t.kids.length, id: t.id })),
+    bk: local.fish.filter((f) => f.v === -3).map((f) => ({ x: f.x, y: f.y })),
     hc: 1,
   };
 }
@@ -350,8 +351,10 @@ function localStep(dt) {
     localMe.input.dash = input.dash;
   }
   S.step(local, dt);
+  let gains = 0;
   for (const ev of local.events) {
-    if (ev.type === 'gain' && ev.train === localMe) floats.push({ x: localMe.x + 34, y: localMe.y - 10, text: '+1 냥', t: 0 });
+    if (ev.type === 'gain' && ev.train === localMe) gains++;
+    if (ev.type === 'basket' && state === 'play') floats.push({ text: '🧺 아기냥 바구니가 나타났어요! 지도의 노란 점으로!', t: -2.5, screen: true });
     if (ev.type === 'poison' && ev.train === localMe) floats.push({ x: localMe.x + 34, y: localMe.y - 10, text: ouchText(ev.onion, ev.n), t: 0 });
     if (ev.type === 'crash' && ev.train === localMe) {
       const t = localMe;
@@ -366,6 +369,7 @@ function localStep(dt) {
       localMe = null;
     }
   }
+  if (gains && localMe) floats.push({ x: localMe.x + 34, y: localMe.y - 10, text: '+' + gains + ' 냥' + (gains > 1 ? ' 🧺' : ''), t: 0 });
   local.events.length = 0;
 }
 
@@ -474,6 +478,7 @@ function onServer(m, e) {
     net.snaps.push({ at: st + net.off, d: m, map: new Map(m.tr.map((r) => [r[0], r])) });
     if (net.snaps.length > 10) net.snaps.shift();
     if (m.mm) net.mm = m.mm;
+    if (m.bk) net.bk = m.bk;
     net.hc = m.hc || 0;
     if (m.my) {
       if (!net.gotFirst) {
@@ -489,6 +494,8 @@ function onServer(m, e) {
       net.gotFirst = true;
       run.max = Math.max(run.max, m.my[1]);
     }
+  } else if (m.t === 'basket') {
+    if (state === 'play') floats.push({ text: '🧺 아기냥 바구니가 나타났어요! 지도의 노란 점으로!', t: -2.5, screen: true });
   } else if (m.t === 'ouch') {
     // 독버섯이나 양파를 먹었다
     const last = net.snaps[net.snaps.length - 1];
@@ -564,6 +571,7 @@ function onlineScene() {
     lb: d.lb.map((r) => ({ name: r[0], bot: !!r[1], len: r[2], id: r[3] })),
     my: d.my ? { rank: d.my[0], len: d.my[1], gauge: d.my[2] } : null,
     mm: mm, hc: net.hc,
+    bk: (net.bk || []).reduce((a, v, i, arr) => { if (i % 2 === 0) a.push({ x: v, y: arr[i + 1] }); return a; }, []),
   };
 }
 
@@ -753,7 +761,33 @@ function drawMushroom(f) {
   ctx.restore();
 }
 
+// 아기냥 바구니: 고리버들 바구니에서 아기냥 셋이 고개를 내밀고, 바닥이 반짝반짝 빛난다
+const BASKET_FURS = ['cream', 'gray', 'calico'];
+function drawBasket(f) {
+  const pulse = 0.5 + 0.5 * Math.sin(clock * 4);
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  ctx.fillStyle = 'rgba(255,214,90,' + (0.25 + pulse * 0.25) + ')';
+  ctx.beginPath(); ctx.arc(0, 4, 34 + pulse * 6, 0, 7); ctx.fill();
+  for (let i = 0; i < 3; i++) {
+    const img = sprites[BASKET_FURS[i]] && sprites[BASKET_FURS[i]].happy;
+    if (img) {
+      const s = 9 / SR, bob = Math.sin(clock * 5 + i * 2) * 1.5;
+      ctx.drawImage(img, (i - 1) * 11 - SPR / 2 * s, -8 + bob - (SPR / 2 + 6) * s, SPR * s, SPR * s);
+    }
+  }
+  ctx.fillStyle = '#c98a45'; ctx.strokeStyle = '#8a5523'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-22, -2); ctx.lineTo(22, -2); ctx.lineTo(17, 18); ctx.lineTo(-17, 18); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(138,85,35,.6)'; ctx.lineWidth = 1.5;
+  for (const y of [4, 10]) { ctx.beginPath(); ctx.moveTo(-20 + (y - 4) * 0.25, y); ctx.lineTo(20 - (y - 4) * 0.25, y); ctx.stroke(); }
+  for (let x = -14; x <= 14; x += 7) { ctx.beginPath(); ctx.moveTo(x, -2); ctx.lineTo(x * 0.8, 18); ctx.stroke(); }
+  ctx.fillStyle = '#e0a35c'; rrect(-24, -5, 48, 6, 3); ctx.fill();
+  ctx.restore();
+  text('🧺 ' + S.BASKET_KIDS + '마리', f.x, f.y + 32, 12, '#fff', 'center', ['#b4500a', 3.5]);
+}
+
 function drawFish(f) {
+  if (f.v === -3) { drawBasket(f); return; }
   if (f.v === -2) { drawOnion(f); return; }
   if (f.v < 0) { drawMushroom(f); return; }
   const s = f.v > 1 ? 10 : 7;
@@ -894,12 +928,8 @@ function drawHud() {
   const my = scene.my;
   ctx.fillStyle = 'rgba(255,255,255,.9)'; rrect(12, top, 150, 62, 16); ctx.fill();
   drawSprite(sprites.cream.happy, 38, top + 30, 13, -Math.PI / 2);
-  text('아기냥', 60, top + 15, 13, '#8a4a12', 'left');
-  text((my ? my.len : 0) + '마리', 60, top + 36, 22, '#e36d0e', 'left');
-  for (let i = 0; i < GAUGE_MAX; i++) {
-    ctx.fillStyle = my && i < my.gauge ? '#7ec8e3' : '#e8dccd';
-    ctx.beginPath(); ctx.arc(64 + i * 14, top + 53, 4.5, 0, 7); ctx.fill();
-  }
+  text('아기냥', 60, top + 18, 13, '#8a4a12', 'left');
+  text((my ? my.len : 0) + '마리', 60, top + 41, 22, '#e36d0e', 'left');
   if (mode === 'online') {
     ctx.fillStyle = 'rgba(255,255,255,.85)'; rrect(12, top + 68, 150, 24, 12); ctx.fill();
     text((typeof net.room === 'string' ? '👫 친구 방 · ' : '👥 지금 ') + scene.hc + '명 놀이 중', 87, top + 80, 12.5, '#2f7a3f');
@@ -931,6 +961,13 @@ function drawHud() {
     const rad = mine ? 4.5 : 2 + Math.min(3, t.len / 12);
     const px = mine && scene.me ? scene.me.x : t.x, py = mine && scene.me ? scene.me.y : t.y;
     ctx.beginPath(); ctx.arc(mx + 4 + px / WORLD * (ms - 8), myy + 4 + py / WORLD * (ms - 8), rad, 0, 7); ctx.fill();
+  }
+  for (const b of scene.bk || []) {
+    const bx = mx + 4 + b.x / WORLD * (ms - 8), by = myy + 4 + b.y / WORLD * (ms - 8);
+    ctx.fillStyle = 'rgba(255,214,60,' + (0.35 + 0.35 * Math.sin(clock * 6)) + ')';
+    ctx.beginPath(); ctx.arc(bx, by, 8, 0, 7); ctx.fill();
+    ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#b4500a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(bx, by, 4.5, 0, 7); ctx.fill(); ctx.stroke();
   }
   if (clock < hintUntil && state === 'play') {
     ctx.globalAlpha = Math.min(1, hintUntil - clock);
@@ -1213,7 +1250,7 @@ if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) $('pc-t
 else {
   // PC(마우스) 조작 설명
   $('rule-move').textContent = '🖱️ 마우스를 가고 싶은 쪽에 두면 따라가요';
-  $('rule-dash').textContent = '💨 마우스를 누르고 있거나 스페이스바를 누르면 달려요';
+  $('rule-dash').textContent = '💨 마우스를 누르고 있거나 스페이스바를 누르면 달려요 (꼬리 냥이가 조금씩 떨어져요)';
 }
 // 규칙 설명의 독버섯·양파 그림은 게임 화면과 똑같이 그린다
 for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', drawOnion, 19, 0.85]]) {
