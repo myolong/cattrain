@@ -157,7 +157,7 @@ function localScene() {
   const top = order[0];
   const trains = local.trains.filter((t) => t.alive).map((t) => ({
     id: t.id, name: t.name, fur: t.fur, scarf: t.scarf, bot: t.bot, x: t.x, y: t.y, a: t.a, hat: t.hat, tail: t.tail,
-    kids: t.kids, segs: t.segs, dash: t.dashNow, invul: t.invul > 0, crown: t === top,
+    kids: t.kids, segs: smoothSegs(t), dash: t.dashNow, invul: t.invul > 0, crown: t === top,
   }));
   const me = localMe && localMe.alive ? trains.find((t) => t.id === localMe.id) : null;
   const kittens = local.kittens.map((k) => ({ x: k.x, y: k.y, fur: k.fur, wild: k.wild, old: !k.wild && local.now - k.born > 26, a: k.a, seed: k.born }));
@@ -376,7 +376,7 @@ function onlineScene() {
   const me = d.me ? trains.find((x) => x.id === d.me) || null : null;
   if (me && pred && pred.id === me.id) {
     me.x = pred.x; me.y = pred.y; me.a = pred.a;
-    me.segs = pred.segs.map((s) => ({ x: s.x, y: s.y, a: s.a }));
+    me.segs = smoothSegs(pred);
   }
   const mm = [];
   for (let i = 0; i < net.mm.length; i += 4) mm.push({ x: net.mm[i], y: net.mm[i + 1], len: net.mm[i + 2], id: net.mm[i + 3] });
@@ -398,6 +398,25 @@ function rowToTrain(r) {
     hat: HAT_KEYS[(r[10] || 0) - 1] || '', tail: TAIL_KEYS[(r[11] || 0) - 1] || '',
     bot: !!(r[6] & 1), dash: !!(r[6] & 2), invul: !!(r[6] & 4), crown: !!(r[6] & 8), name: r[7], kids: kids, segs: segs,
   };
+}
+
+// 아기냥 자리를 꼬리 경로 점(4px 간격) 사이에서 부드럽게 잇는다.
+// 경로 점에 딱 맞춰 그리면, 화면이 빠른 PC(120~144Hz)에서 아기냥이 4px씩 툭툭 끊겨 움직인다.
+function smoothSegs(t) {
+  const tr = t.trail, L = tr.length, g = S.gapIdx(t);
+  const out = [];
+  if (L < 2) return out;
+  const last = tr[L - 1];
+  const f = clamp(Math.hypot(t.x - last.x, t.y - last.y) / S.STEP, 0, 1);
+  let px = t.x, py = t.y;
+  for (let k = 1; k <= t.kids.length; k++) {
+    const i = Math.max(1, L - 1 - k * g);
+    const p = tr[i], n = tr[Math.min(L - 1, i + 1)];
+    const x = p.x + (n.x - p.x) * f, y = p.y + (n.y - p.y) * f;
+    out.push({ x: x, y: y, a: Math.atan2(py - y, px - x) });
+    px = x; py = y;
+  }
+  return out;
 }
 
 function segAngles(t) {
