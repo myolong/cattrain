@@ -990,13 +990,37 @@ passBtn.addEventListener('click', async () => {
   passBtn.disabled = false;
   renderShop();
 });
-$('shop-btn').addEventListener('click', () => {
+// 첫 화면 꾸미기 버튼 안에서 모자·꼬리 장식을 돌아가며 보여 준다 (눈에 띄게)
+const shopBtnPic = miniCanvas(120, 64);
+$('shop-btn-pic').append(shopBtnPic.c);
+const SHOWCASE = [['santa', 'firework', 'gold'], ['gat', 'saekdong', 'orange'], ['sombrero', 'stars', 'calico'], ['antler', 'lights', 'rudolph'], ['sakura', 'petals', 'sakura'], ['party', 'snow', 'snow']];
+function shopBtnFrame() {
+  if (!startEl.hidden) {
+    const s = SHOWCASE[Math.floor(clock / 1.8) % SHOWCASE.length];
+    drawMini(shopBtnPic.g, 120, 64, { x: 92, y: 36, a: 0, r: 17, len: 3, fur: s[2], hat: s[0], tail: s[1], wave: true });
+  }
+  requestAnimationFrame(shopBtnFrame);
+}
+requestAnimationFrame(shopBtnFrame);
+
+function openShop() {
   renderShop();
   // 모달로 열면 브라우저 맨 위층에 떠서 광고가 그 밑에 깔린다. 그래서 보통 창으로 연다.
   shopEl.show();
   if (!shopAnim) shopAnim = requestAnimationFrame(shopFrame);
+}
+$('shop-btn').addEventListener('click', openShop);
+let shopFromResult = false;
+shopEl.addEventListener('close', () => {
+  paintFurs();
+  // 결과 창에서 꾸미러 왔으면, 바뀐 모습으로 결과 창에 돌아간다
+  if (shopFromResult) {
+    shopFromResult = false;
+    run.fur = chosenFur; run.hat = deco.hat; run.tail = deco.tail;
+    dialog.returnValue = '';
+    dialog.showModal();
+  }
 });
-shopEl.addEventListener('close', () => { paintFurs(); });
 if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) $('pc-tip').hidden = false;
 nameEl.value = load(NAME_KEY, '');
 if (SERVER) $('mode-note').hidden = false;
@@ -1092,6 +1116,7 @@ function showResult(info) {
 
 dialog.addEventListener('close', () => {
   if (state !== 'result') return;
+  if (dialog.returnValue === 'deco') { shopFromResult = true; openShop(); return; }
   const cont = dialog.returnValue === 'continue' && !run.continued;
   // 이어하기는 나중에 보상형 광고를 붙일 자리. 지금은 한 판에 한 번 그냥 이어 할 수 있다.
   if (cont) run.continued = true;
