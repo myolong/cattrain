@@ -30,12 +30,20 @@ export const ITEMS = [
   ['tail', 'saekdong', '색동 띠', 'korea'],
   ['tail', 'petals', '벚꽃잎', 'world'],
   ['tail', 'stars', '별 반짝', 'world'],
+  ['tail', 'zap', '찌릿 번개', 'fun'],
+  ['tail', 'bubbles', '무지개 비눗방울', 'fun'],
+  ['tail', 'notes', '음표 행진', 'fun'],
+  ['face', 'angry', '화난 얼굴', 'mood'],
+  ['face', 'cry', '우는 얼굴', 'mood'],
+  ['face', 'grumpy', '짜증난 얼굴', 'mood'],
 ];
 export const THEMES = {
   xmas: ['크리스마스', '#e23b3b'],
   newyear: ['연말·설날', '#7a5ae0'],
   korea: ['한국', '#2a7ae0'],
   world: ['세계', '#2fae8f'],
+  fun: ['신기한', '#ff7a2f'],
+  mood: ['표정', '#d9468f'],
 };
 
 export const HATS = {
@@ -212,6 +220,84 @@ export const TAILS = {
         const tw = 0.6 + 0.4 * Math.sin(clock * 5 + i * 1.7);
         const q = beside(p, kr, 1.25, side);
         star(g, q.x, q.y, kr * 0.48 * tw, kr * 0.2 * tw);
+      }
+    },
+  },
+  zap: {
+    // 기차를 따라 지지직 튀는 파란 번개. 매 순간 모양이 바뀐다.
+    over(g, pts, kr, clock) {
+      const tick = Math.floor(clock * 14);
+      let seed = tick * 9301 + pts.length * 49297;
+      const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      for (const [w, c] of [[kr * 0.8, 'rgba(80,160,255,0.35)'], [kr * 0.32, '#7cc8ff'], [kr * 0.13, '#fff']]) {
+        g.strokeStyle = c; g.lineWidth = Math.max(1, w);
+        for (const side of [-1, 1]) {
+          seed = tick * 9301 + (side + 2) * 7919;
+          g.beginPath();
+          for (let i = 0; i < pts.length; i++) {
+            const q = beside(pts[i], kr, 1.1 + rnd() * 0.7, side);
+            i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y);
+          }
+          g.stroke();
+        }
+      }
+      // 군데군데 번쩍
+      seed = tick * 31 + 7;
+      g.fillStyle = 'rgba(220,245,255,0.9)';
+      for (let i = 0; i < pts.length; i += 3) {
+        if (rnd() < 0.5) continue;
+        const q = beside(pts[i], kr, 1.3, rnd() < 0.5 ? -1 : 1);
+        g.beginPath(); g.arc(q.x, q.y, kr * (0.18 + rnd() * 0.2), 0, 7); g.fill();
+      }
+    },
+  },
+  bubbles: {
+    // 기차 뒤로 무지개빛 비눗방울이 둥실 떠올랐다가 톡 사라진다
+    over(g, pts, kr, clock) {
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        for (let k = 0; k < 2; k++) {
+          const ph = (clock * 0.55 + i * 0.29 + k * 0.5) % 1;
+          const side = (i + k) % 2 ? 1 : -1;
+          const q = beside(p, kr, 1.0 + ph * 1.4, side);
+          const rr = kr * (0.35 + ph * 0.45);
+          const x = q.x + Math.sin(clock * 3 + i + k) * kr * 0.2, y = q.y - ph * kr * 0.6;
+          g.globalAlpha = ph < 0.85 ? 0.9 : (1 - ph) / 0.15 * 0.9;
+          const hue = (i * 40 + clock * 90 + k * 120) % 360;
+          const gr = g.createRadialGradient(x - rr * 0.3, y - rr * 0.3, rr * 0.1, x, y, rr);
+          gr.addColorStop(0, 'rgba(255,255,255,0.05)');
+          gr.addColorStop(0.6, 'hsla(' + hue + ',95%,72%,0.35)');
+          gr.addColorStop(1, 'hsla(' + ((hue + 120) % 360) + ',95%,62%,0.95)');
+          g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill();
+          g.fillStyle = 'rgba(255,255,255,0.9)';
+          g.beginPath(); g.ellipse(x - rr * 0.35, y - rr * 0.4, rr * 0.22, rr * 0.12, -0.6, 0, 7); g.fill();
+        }
+      }
+      g.globalAlpha = 1;
+    },
+  },
+  notes: {
+    // 알록달록 음표가 통통 튀며 기차를 따라온다
+    over(g, pts, kr, clock) {
+      const cs = ['#ff5a8a', '#3a9aff', '#ffb300', '#2fbf71', '#a55aff'];
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i], side = i % 2 ? 1 : -1;
+        const hop = Math.abs(Math.sin(clock * 6 + i * 0.8));
+        const q = beside(p, kr, 1.3 + hop * 0.25, side);
+        const s = kr * 0.68;
+        g.save(); g.translate(q.x, q.y - hop * kr * 0.25); g.rotate(Math.sin(clock * 4 + i) * 0.3);
+        g.fillStyle = g.strokeStyle = cs[i % cs.length]; g.lineWidth = Math.max(1.2, s * 0.22);
+        if (i % 3 === 2) {
+          // 두 개 붙은 음표
+          g.beginPath(); g.ellipse(-s * 0.55, s * 0.5, s * 0.36, s * 0.26, -0.4, 0, 7); g.ellipse(s * 0.55, s * 0.35, s * 0.36, s * 0.26, -0.4, 0, 7); g.fill();
+          g.beginPath(); g.moveTo(-s * 0.23, s * 0.45); g.lineTo(-s * 0.23, -s * 0.75); g.lineTo(s * 0.87, -s * 0.9); g.lineTo(s * 0.87, s * 0.3); g.stroke();
+          g.lineWidth = s * 0.3; g.beginPath(); g.moveTo(-s * 0.23, -s * 0.68); g.lineTo(s * 0.87, -s * 0.83); g.stroke();
+        } else {
+          g.beginPath(); g.ellipse(0, s * 0.5, s * 0.4, s * 0.28, -0.4, 0, 7); g.fill();
+          g.beginPath(); g.moveTo(s * 0.33, s * 0.42); g.lineTo(s * 0.33, -s * 0.85); g.quadraticCurveTo(s * 0.5, -s * 0.4, s * 0.95, -s * 0.3); g.stroke();
+        }
+        g.restore();
       }
     },
   },

@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
 let ctx = canvas.getContext('2d');   // 꾸미기 미리보기를 그릴 때 잠깐 바꿔 끼운다
 const FONT = '"Jua", -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
-const { WORLD, GAUGE_MAX, START_LEN, FUR_KEYS, PICK_FURS, SCARVES, FISH_COLORS, LEADER_FURS, SPECIAL_FURS, HAT_KEYS, TAIL_KEYS } = S;
+const { WORLD, GAUGE_MAX, START_LEN, FUR_KEYS, PICK_FURS, SCARVES, FISH_COLORS, LEADER_FURS, SPECIAL_FURS, HAT_KEYS, TAIL_KEYS, FACE_KEYS } = S;
 
 const BEST_KEY = 'nyang-cattrain-best';
 const FUR_KEY = 'nyang-cattrain-fur';
@@ -104,7 +104,7 @@ const FLAT = /[?&]flat=1/.test(location.search);
 const sprites = {};
 for (const fur of LEADER_FURS) {
   sprites[fur] = {};
-  for (const face of ['normal', 'happy', 'dizzy']) {
+  for (const face of ['normal', 'happy', 'dizzy', 'angry', 'cry', 'grumpy']) {
     const c = document.createElement('canvas');
     c.width = c.height = SPR;
     const g = c.getContext('2d');
@@ -161,7 +161,7 @@ function localScene() {
   const order = S.ranked(local);
   const top = order[0];
   const trains = local.trains.filter((t) => t.alive).map((t) => ({
-    id: t.id, name: t.name, fur: t.fur, scarf: t.scarf, bot: t.bot, x: t.x, y: t.y, a: t.a, hat: t.hat, tail: t.tail,
+    id: t.id, name: t.name, fur: t.fur, scarf: t.scarf, bot: t.bot, x: t.x, y: t.y, a: t.a, hat: t.hat, tail: t.tail, face: t.face,
     kids: t.kids, segs: smoothSegs(t), dash: t.dashNow, invul: t.invul > 0, crown: t === top,
   }));
   const me = localMe && localMe.alive ? trains.find((t) => t.id === localMe.id) : null;
@@ -204,7 +204,7 @@ function localStep(dt) {
 function localJoin(cont) {
   let kids;
   if (cont && run.lastKids) kids = run.lastKids.slice(0, Math.max(START_LEN, Math.ceil(run.lastKids.length / 2)));
-  localMe = S.addPlayer(local, { name: run.name, fur: run.fur, kids: kids, hat: run.hat, tail: run.tail });
+  localMe = S.addPlayer(local, { name: run.name, fur: run.fur, kids: kids, hat: run.hat, tail: run.tail, face: run.face });
   run.joinedAt = local.now;
   input.a = localMe.a;
 }
@@ -329,7 +329,7 @@ function onServer(m, e) {
 
 function joinOnline(cont) {
   sendView();
-  sendNet({ t: 'join', name: run.name, fur: run.fur, hat: run.hat, tail: run.tail, cont: !!cont });
+  sendNet({ t: 'join', name: run.name, fur: run.fur, hat: run.hat, tail: run.tail, face: run.face, cont: !!cont });
 }
 
 // 받아 둔 서버 모습 두 장 사이를 이어서 지금 그릴 모습을 만든다.
@@ -400,7 +400,7 @@ function rowToTrain(r) {
   for (const ch of r[8]) kids.push(FUR_KEYS[+ch] || 'orange');
   return {
     id: r[0], x: r[1], y: r[2], a: r[3] / 100, fur: LEADER_FURS[r[4]] || 'orange', scarf: SCARVES[r[5]] || SCARVES[1],
-    hat: HAT_KEYS[(r[10] || 0) - 1] || '', tail: TAIL_KEYS[(r[11] || 0) - 1] || '',
+    hat: HAT_KEYS[(r[10] || 0) - 1] || '', tail: TAIL_KEYS[(r[11] || 0) - 1] || '', face: FACE_KEYS[(r[12] || 0) - 1] || '',
     bot: !!(r[6] & 1), dash: !!(r[6] & 2), invul: !!(r[6] & 4), crown: !!(r[6] & 8), name: r[7], kids: kids, segs: segs,
   };
 }
@@ -637,7 +637,7 @@ function drawTrain(t) {
   ctx.fillStyle = tc;
   ctx.beginPath(); ctx.ellipse(0, r * 0.85, r * 0.78, r * 0.24, 0, 0, 7); ctx.fill();
   ctx.restore();
-  drawSprite((sprites[t.fur] || sprites.orange).normal, t.x, t.y, r * (1 + Math.max(0, Math.sin(clock * 11 + 0.9)) * 0.05), t.a + Math.sin(clock * 5.5) * 0.08);
+  drawSprite((sprites[t.fur] || sprites.orange)[t.face || 'normal'] || sprites.orange.normal, t.x, t.y, r * (1 + Math.max(0, Math.sin(clock * 11 + 0.9)) * 0.05), t.a + Math.sin(clock * 5.5) * 0.08);
   if (t.hat && D.HATS[t.hat]) {
     ctx.save();
     ctx.translate(t.x, t.y); ctx.rotate(t.a + Math.PI / 2);
@@ -845,6 +845,7 @@ const deco = (function () {
   return {
     hat: HAT_KEYS.includes(d.hat) ? d.hat : '',
     tail: TAIL_KEYS.includes(d.tail) ? d.tail : '',
+    face: FACE_KEYS.includes(d.face) ? d.face : '',
   };
 })();
 function saveDeco() { save(DECO_KEY, JSON.stringify(deco)); }
@@ -880,7 +881,7 @@ function drawMini(g, w, h, o) {
   g.clearRect(0, 0, w, h);
   const len = o.len || 0;
   const r = o.r || 20, kr = r * 0.74;
-  const t = { id: 1, x: o.x, y: o.y, a: o.a || 0, fur: o.fur, hat: o.hat || '', tail: o.tail || '', kids: [], segs: [] };
+  const t = { id: 1, x: o.x, y: o.y, a: o.a || 0, fur: o.fur, hat: o.hat || '', tail: o.tail || '', face: o.face || '', kids: [], segs: [] };
   const furs = ['white', 'calico', 'gray', 'cream', 'black', 'orange'];
   let px = t.x, py = t.y;
   for (let i = 0; i < len; i++) {
@@ -915,16 +916,17 @@ $('shop-preview').append(shopPrev.c);
 let shopAnim = 0;
 function shopFrame() {
   if (!shopEl.open) { shopAnim = 0; return; }
-  drawMini(shopPrev.g, 300, 110, { x: 230, y: 62, a: 0, r: 24, len: 5, fur: chosenFur, hat: deco.hat, tail: deco.tail, wave: true });
+  drawMini(shopPrev.g, 300, 110, { x: 230, y: 62, a: 0, r: 24, len: 5, fur: chosenFur, hat: deco.hat, tail: deco.tail, face: deco.face, wave: true });
   shopAnim = requestAnimationFrame(shopFrame);
 }
 
 function equipped(kind, key) {
-  return kind === 'hat' ? deco.hat === key : kind === 'tail' ? deco.tail === key : chosenFur === key;
+  return kind === 'hat' ? deco.hat === key : kind === 'tail' ? deco.tail === key : kind === 'face' ? deco.face === key : chosenFur === key;
 }
 function equip(kind, key) {
   if (kind === 'hat') deco.hat = deco.hat === key ? '' : key;
   else if (kind === 'tail') deco.tail = deco.tail === key ? '' : key;
+  else if (kind === 'face') deco.face = deco.face === key ? '' : key;
   else setFur(chosenFur === key && SPECIAL_FURS.includes(key) ? 'orange' : key);
   saveDeco();
 }
@@ -933,7 +935,7 @@ function itemCard(kind, key, name, theme) {
   const li = document.createElement('li');
   const mc = miniCanvas(96, 76);
   if (kind === 'tail') drawMini(mc.g, 96, 76, { x: 80, y: 40, a: 0, r: 13, len: 4, fur: 'orange', tail: key });
-  else drawMini(mc.g, 96, 76, { x: 48, y: 48, a: -Math.PI / 2, r: 22, len: 0, fur: kind === 'fur' ? key : 'orange', hat: kind === 'hat' ? key : '' });
+  else drawMini(mc.g, 96, 76, { x: 48, y: 48, a: -Math.PI / 2, r: 22, len: 0, fur: kind === 'fur' ? key : 'orange', hat: kind === 'hat' ? key : '', face: kind === 'face' ? key : '' });
   li.append(mc.c);
   const nm = document.createElement('b'); nm.textContent = name; li.append(nm);
   if (theme) {
@@ -979,6 +981,7 @@ function renderShop() {
     shopList.append(ul);
   };
   sec('🎩 모자', 'hat', D.ITEMS.filter((i) => i[0] === 'hat'));
+  sec('😼 대장 냥이 표정', 'face', D.ITEMS.filter((i) => i[0] === 'face'));
   sec('🐱 대장 냥이 털색', 'fur', PICK_FURS.map((f) => ['fur', f, FUR_NAMES[f] + ' (기본)', '']).concat(D.ITEMS.filter((i) => i[0] === 'fur')));
   sec('✨ 꼬리 장식', 'tail', D.ITEMS.filter((i) => i[0] === 'tail'));
   passBtn.hidden = decoPass;
@@ -1000,11 +1003,11 @@ if (DECO_FREE) {
 }
 const shopBtnPic = miniCanvas(120, 64);
 $('shop-btn-pic').append(shopBtnPic.c);
-const SHOWCASE = [['santa', 'firework', 'gold'], ['gat', 'saekdong', 'orange'], ['sombrero', 'stars', 'calico'], ['antler', 'lights', 'rudolph'], ['sakura', 'petals', 'sakura'], ['party', 'snow', 'snow']];
+const SHOWCASE = [['santa', 'firework', 'gold', ''], ['gat', 'zap', 'orange', 'angry'], ['sombrero', 'notes', 'calico', ''], ['antler', 'lights', 'rudolph', ''], ['sakura', 'bubbles', 'sakura', 'cry'], ['party', 'saekdong', 'snow', 'grumpy']];
 function shopBtnFrame() {
   if (!startEl.hidden) {
     const s = SHOWCASE[Math.floor(Math.max(0, clock) / 1.8) % SHOWCASE.length];
-    drawMini(shopBtnPic.g, 120, 64, { x: 92, y: 36, a: 0, r: 17, len: 3, fur: s[2], hat: s[0], tail: s[1], wave: true });
+    drawMini(shopBtnPic.g, 120, 64, { x: 92, y: 36, a: 0, r: 17, len: 3, fur: s[2], hat: s[0], tail: s[1], face: s[3], wave: true });
   }
   requestAnimationFrame(shopBtnFrame);
 }
@@ -1023,7 +1026,7 @@ shopEl.addEventListener('close', () => {
   // 결과 창에서 꾸미러 왔으면, 바뀐 모습으로 결과 창에 돌아간다
   if (shopFromResult) {
     shopFromResult = false;
-    run.fur = chosenFur; run.hat = deco.hat; run.tail = deco.tail;
+    run.fur = chosenFur; run.hat = deco.hat; run.tail = deco.tail; run.face = deco.face;
     dialog.returnValue = '';
     dialog.showModal();
   }
@@ -1065,7 +1068,7 @@ function startLocal() {
 }
 
 function newRun(name, fur) {
-  run = { name: name, fur: fur, hat: deco.hat, tail: deco.tail, max: 0, lived: 0, joinedAt: 0, continued: false, lastKids: null };
+  run = { name: name, fur: fur, hat: deco.hat, tail: deco.tail, face: deco.face, max: 0, lived: 0, joinedAt: 0, continued: false, lastKids: null };
 }
 
 function startRun() {
