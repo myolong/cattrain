@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
 let ctx = canvas.getContext('2d');   // 꾸미기 미리보기를 그릴 때 잠깐 바꿔 끼운다
 const FONT = '"Jua", -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
-const EMOTES = ['냥! 👋', '😻', '따라와!', '비켜~', '😿', '고마워!'];
+const EMOTES = ['냥! 👋', '훗! 😜', '비켜~ 💨', '따라와! 👉', '고마워! 💕', '😻', '😿'];
 const { WORLD, GAUGE_MAX, START_LEN, FUR_KEYS, PICK_FURS, SCARVES, FISH_COLORS, LEADER_FURS, SPECIAL_FURS, HAT_KEYS, TAIL_KEYS, FACE_KEYS } = S;
 
 const BEST_KEY = 'nyang-cattrain-best';
@@ -1287,7 +1287,7 @@ else {
   // PC(마우스) 조작 설명
   $('rule-move').textContent = '🖱️ 마우스를 가고 싶은 쪽에 두면 따라가요';
   $('rule-dash').textContent = '💨 마우스를 누르고 있거나 스페이스바를 누르면 달려요 (꼬리 냥이가 조금씩 떨어져요)';
-  $('rule-emote').textContent = '💬 숫자키 1~6이나 오른쪽 아래 💬 버튼으로 "냥! 👋" 인사를 보내요';
+  $('rule-emote').textContent = '💬 숫자키(1~7)로 말풍선을 띄워보세요!';
 }
 // 규칙 설명의 독버섯·양파 그림은 게임 화면과 똑같이 그린다
 for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', drawOnion, 19, 0.85]]) {
