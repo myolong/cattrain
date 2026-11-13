@@ -1116,7 +1116,9 @@ function setFriendRoom(code) {
   friendRoom = code;
   try { history.replaceState(null, '', inviteLink(code)); } catch (e) {}
   $('invite-box').hidden = !code;
-  $('invite-btn').hidden = !!code;
+  $('tab-all').setAttribute('aria-checked', String(!code));
+  $('tab-friend').setAttribute('aria-checked', String(!!code));
+  $('tab-desc').textContent = code ? '링크로 들어온 친구들과 컴퓨터 냥이만 있는 우리끼리 놀이터예요' : '처음 보는 사람들과 같은 놀이터에서 놀아요';
   $('invite-link').value = code ? inviteLink(code) : '';
   $('mode-note').textContent = code ? '👫 친구 방에서 놀아요 (방 이름 ' + code + ')' : '👥 다른 사람들과 같은 놀이터에서 놀아요';
 }
@@ -1133,11 +1135,12 @@ if (SERVER) {
     setFriendRoom(q.toLowerCase());
     $('invite-msg').textContent = '친구가 초대한 방이에요. 출발하면 친구와 같은 놀이터에서 만나요!';
   }
-  $('invite-btn').addEventListener('click', () => {
+  $('tab-friend').addEventListener('click', () => {
+    if (friendRoom) return;
     setFriendRoom(newRoomCode());
     $('invite-msg').textContent = '이 링크를 친구에게 보내 주세요. 링크로 들어온 친구와 같은 놀이터에서 만나요!';
   });
-  $('invite-leave').addEventListener('click', () => setFriendRoom(''));
+  $('tab-all').addEventListener('click', () => setFriendRoom(''));
   const copyBtn = $('invite-copy');
   copyBtn.addEventListener('click', async () => {
     const link = $('invite-link').value;
