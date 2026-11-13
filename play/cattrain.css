@@ -324,4 +324,5 @@ body.cattrain {
   border: 2px solid #e36d0e; border-radius: 16px; background: #fff; color: #8a4a12;
   font: inherit; font-family: "Jua", sans-serif; font-size: 16px; padding: 8px 10px; min-width: 76px; touch-action: none;
 }
+.emote-menu button:last-child:nth-child(odd) { grid-column: span 2; }
 .emote-menu button:active { background: #ffe7cf; }
