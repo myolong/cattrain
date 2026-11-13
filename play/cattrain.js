@@ -837,28 +837,27 @@ const startEl = $('start');
 const nameEl = $('name');
 const fursEl = $('furs');
 const goBtn = $('go');
-// ───── 꾸미기 (광고 보고 여는 털색·모자·꼬리 장식, 이 기기에 저장) ─────
+// ───── 꾸미기: 광고 한 번 보면 이번에 들어와 있는 동안 전부 고를 수 있다.
+// 고른 것은 이 기기에 남아 다음에도 쓰고 있지만, 다시 들어와서 바꾸려면 광고를 또 봐야 한다. ─────
 const deco = (function () {
   let d = {};
   try { d = JSON.parse(localStorage.getItem(DECO_KEY) || '{}') || {}; } catch (e) {}
   return {
-    own: Array.isArray(d.own) ? d.own.filter((x) => typeof x === 'string') : [],
     hat: HAT_KEYS.includes(d.hat) ? d.hat : '',
     tail: TAIL_KEYS.includes(d.tail) ? d.tail : '',
   };
 })();
 function saveDeco() { save(DECO_KEY, JSON.stringify(deco)); }
-const owns = (kind, key) => (kind === 'fur' && PICK_FURS.includes(key)) || deco.own.includes(kind + ':' + key);
-if (!owns('hat', deco.hat)) deco.hat = '';
-if (!owns('tail', deco.tail)) deco.tail = '';
+let decoPass = false; // 이번 방문에서 광고를 봤는지 (새로 들어오면 다시 false)
+const owns = (kind, key) => (kind === 'fur' && PICK_FURS.includes(key)) || decoPass;
 
 const FUR_NAMES = { orange: '치즈', gray: '회색', white: '흰색', black: '검정', calico: '삼색', rudolph: '루돌프', snow: '눈송이', gold: '황금 복냥', sakura: '벚꽃' };
 let chosenFur = load(FUR_KEY, 'orange');
-if (!LEADER_FURS.includes(chosenFur) || !owns('fur', chosenFur)) chosenFur = 'orange';
+if (!LEADER_FURS.includes(chosenFur)) chosenFur = 'orange';
 function setFur(fur) { chosenFur = fur; save(FUR_KEY, fur); paintFurs(); }
 function paintFurs() {
   fursEl.textContent = '';
-  for (const fur of PICK_FURS.concat(SPECIAL_FURS.filter((f) => owns('fur', f)))) {
+  for (const fur of PICK_FURS.concat(SPECIAL_FURS.filter((f) => owns('fur', f) || f === chosenFur))) {
     const b = document.createElement('button');
     b.type = 'button';
     b.setAttribute('role', 'radio');
@@ -942,20 +941,13 @@ function itemCard(kind, key, name, theme) {
   }
   const btn = document.createElement('button');
   btn.type = 'button';
-  const have = owns(kind, key), on = equipped(kind, key);
+  const on = equipped(kind, key), have = on || owns(kind, key);
   if (!have) {
     li.classList.add('locked');
-    btn.className = 'ad'; btn.textContent = '🎬 광고 보고 열기';
+    btn.className = 'ad'; btn.textContent = '🎬 광고 보고 쓰기';
     btn.addEventListener('click', async () => {
       btn.disabled = true;
-      let ok = false;
-      try { ok = await window.showRewardedAd('unlock_' + kind + '_' + key, name); } catch (e) { ok = false; }
-      if (ok) {
-        if (!deco.own.includes(kind + ':' + key)) deco.own.push(kind + ':' + key);
-        saveDeco();
-        equip(kind, key);
-        if (kind === 'fur') paintFurs();
-      }
+      if (await openPass()) equip(kind, key);
       renderShop();
     });
   } else {
@@ -965,6 +957,15 @@ function itemCard(kind, key, name, theme) {
   }
   li.append(btn);
   return li;
+}
+
+// 광고를 한 번 보면 이번 방문 동안 모든 꾸미기가 열린다.
+async function openPass() {
+  if (decoPass) return true;
+  let ok = false;
+  try { ok = await window.showRewardedAd('unlock_all_deco', '모든 꾸미기'); } catch (e) { ok = false; }
+  if (ok) { decoPass = true; paintFurs(); }
+  return ok;
 }
 
 function renderShop() {
@@ -978,10 +979,17 @@ function renderShop() {
   sec('🎩 모자', 'hat', D.ITEMS.filter((i) => i[0] === 'hat'));
   sec('🐱 대장 냥이 털색', 'fur', PICK_FURS.map((f) => ['fur', f, FUR_NAMES[f] + ' (기본)', '']).concat(D.ITEMS.filter((i) => i[0] === 'fur')));
   sec('✨ 꼬리 장식', 'tail', D.ITEMS.filter((i) => i[0] === 'tail'));
-  const n = deco.own.length, all = D.ITEMS.length;
-  $('shop-count').textContent = n + ' / ' + all + '개 열림';
+  passBtn.hidden = decoPass;
+  $('shop-count').textContent = decoPass ? '✨ 지금은 모두 열려 있어요' : '';
 }
 
+const passBtn = $('shop-pass');
+passBtn.addEventListener('click', async () => {
+  passBtn.disabled = true;
+  await openPass();
+  passBtn.disabled = false;
+  renderShop();
+});
 $('shop-btn').addEventListener('click', () => {
   renderShop();
   // 모달로 열면 브라우저 맨 위층에 떠서 광고가 그 밑에 깔린다. 그래서 보통 창으로 연다.
