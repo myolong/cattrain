@@ -140,6 +140,33 @@ body.cattrain {
 
 .start .go:active { transform: translateY(3px); box-shadow: 0 3px 0 #e36d0e; }
 
+/* 친구 초대 */
+.start .invite[hidden], .start .invite-box[hidden] { display: none; }
+.start .invite { margin: 0 0 14px; }
+.start .invite-btn {
+  width: 100%; border: 2px solid #4aa3c9; border-radius: 18px; padding: 10px 0;
+  background: #fff; color: #1f7aa3; font: inherit; font-size: 17px;
+}
+.start .invite-box {
+  margin-top: 8px; padding: 12px; border-radius: 16px; background: #e6f5fb;
+  color: #1d5f7d; font-size: 14px; text-align: center;
+}
+.start .invite-box p { margin: 0 0 8px; }
+.start .invite-box input {
+  width: 100%; box-sizing: border-box; border: 1px solid #9fd0e4; border-radius: 10px;
+  padding: 7px 8px; font-size: 13px; color: #333; background: #fff; text-align: center;
+  user-select: all; -webkit-user-select: all;
+}
+.start .invite-row { display: flex; gap: 8px; margin-top: 8px; }
+.start .invite-row button {
+  flex: 1; border: 0; border-radius: 12px; padding: 9px 0; background: #4aa3c9;
+  color: #fff; font: inherit; font-size: 15px;
+}
+.start .invite-leave {
+  margin-top: 8px; border: 0; background: none; color: #5b8ea3; font: inherit; font-size: 13px;
+  text-decoration: underline;
+}
+
 /* 결과 창 */
 #result {
   border: 0;

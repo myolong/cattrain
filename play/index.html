@@ -42,6 +42,18 @@
       <li>🤖 표시는 컴퓨터 냥이, 노란 이름은 다른 사람이에요</li>
     </ul>
     <p class="pc-tip" id="pc-tip" hidden>💻 PC에서 하면 더 넓게 보여서 훨씬 재밌어요!</p>
+    <div class="invite" id="invite" hidden>
+      <button type="button" class="invite-btn" id="invite-btn">👫 친구랑 같은 놀이터에서 놀기</button>
+      <div class="invite-box" id="invite-box" hidden>
+        <p id="invite-msg">이 링크를 친구에게 보내 주세요. 링크로 들어온 친구와 같은 놀이터에서 만나요!</p>
+        <input id="invite-link" readonly aria-label="친구 초대 링크">
+        <div class="invite-row">
+          <button type="button" id="invite-share">📤 친구에게 보내기</button>
+          <button type="button" id="invite-copy">🔗 링크 복사</button>
+        </div>
+        <button type="button" class="invite-leave" id="invite-leave">모두가 노는 놀이터로 돌아가기</button>
+      </div>
+    </div>
     <button type="button" class="go" id="go">출발!</button>
   </section>
 
