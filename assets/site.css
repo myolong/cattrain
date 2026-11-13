@@ -1,0 +1,31 @@
+/* 소개·안내 페이지 공통 모양 (게임 화면은 play/cattrain.css) */
+body.page { max-width: 640px; }
+.page header.top { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+.page .logo { display: flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none; font-family: 'Jua', sans-serif; font-size: 20px; }
+.page .logo img { width: 34px; height: 34px; }
+.page nav a { color: var(--muted); text-decoration: none; font-size: 14px; margin-left: 12px; }
+.page nav a:hover { color: var(--text); }
+.page h1 { font-family: 'Jua', sans-serif; font-weight: normal; font-size: 34px; line-height: 1.2; margin: 18px 0 6px; }
+.page h2 { font-family: 'Jua', sans-serif; font-weight: normal; font-size: 22px; margin: 34px 0 10px; }
+.page h3 { font-size: 16px; margin: 18px 0 4px; }
+.page p, .page li { font-size: 15.5px; }
+.page .lead { color: var(--muted); font-size: 17px; margin: 0 0 18px; }
+.page .play-btn { display: block; text-align: center; background: #22a35a; color: #fff; text-decoration: none; font-family: 'Jua', sans-serif; font-size: 24px; padding: 16px; border-radius: 18px; box-shadow: 0 5px 0 #17803f; margin: 8px 0 6px; }
+.page .play-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #17803f; }
+.page .small { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 18px; }
+.page .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+.page .shots img { width: 100%; height: auto; border-radius: 16px; border: 3px solid #fff; box-shadow: 0 4px 14px rgba(80, 50, 20, .15); display: block; }
+.page .shots figcaption { text-align: center; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.page .cards { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.page .cards li { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.page .cards b { display: block; font-size: 16px; }
+.page .item { display: flex; gap: 12px; align-items: flex-start; }
+.page .item .ico { font-size: 28px; line-height: 1; flex: 0 0 34px; text-align: center; }
+.page details { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px 14px; margin: 8px 0; }
+.page summary { font-weight: 700; cursor: pointer; }
+.page table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; font-size: 14.5px; }
+.page th, .page td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+.page th { background: #fbe9d6; }
+.page footer { margin: 40px 0 0; padding: 18px 0 28px; border-top: 2px solid var(--line); color: var(--muted); font-size: 13px; text-align: center; }
+.page footer a { color: var(--muted); margin: 0 6px; }
+.page a { color: #c96a1b; }
