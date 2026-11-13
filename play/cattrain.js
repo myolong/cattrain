@@ -334,7 +334,7 @@ function localScene() {
     kids: t.kids, segs: smoothSegs(t), dash: t.dashNow, invul: t.invul > 0, crown: t === top, emote: S.emoteNow(local, t),
   }));
   const me = localMe && localMe.alive ? trains.find((t) => t.id === localMe.id) : null;
-  const kittens = local.kittens.map((k) => ({ x: k.x, y: k.y, fur: k.fur, wild: k.wild, old: !k.wild && local.now - k.born > 26, a: k.a, seed: k.born }));
+  const kittens = local.kittens.map((k) => ({ x: k.x, y: k.y, fur: k.fur, wild: k.wild, old: !k.wild && local.now - k.born > S.DROP_FADE, a: k.a, seed: k.born }));
   const myIdx = me ? order.findIndex((t) => t.id === me.id) : -1;
   return {
     trains: trains, fish: local.fish, kittens: kittens, me: me,
