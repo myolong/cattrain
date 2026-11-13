@@ -101,6 +101,61 @@ export function drawCatFace3D(g, r, fur, colors, face, nose) {
       const ex = s * r * 0.38;
       g.beginPath(); g.moveTo(ex - r * 0.12, -r * 0.12); g.lineTo(ex + r * 0.12, r * 0.08); g.moveTo(ex + r * 0.12, -r * 0.12); g.lineTo(ex - r * 0.12, r * 0.08); g.stroke();
     }
+  } else if (face === 'angry' || face === 'grumpy') {
+    // 화남: 눈썹이 가운데로 내려온 눈. 짜증: 반쯤 감은 눈으로 옆을 흘겨봄
+    for (const s of [-1, 1]) {
+      const ex = s * r * 0.38, ey = -r * 0.0;
+      g.save();
+      g.beginPath();
+      if (face === 'angry') { g.moveTo(ex - r * 0.25, ey - r * 0.3 + (s < 0 ? -r * 0.1 : r * 0.1)); g.lineTo(ex + r * 0.25, ey - r * 0.3 + (s < 0 ? r * 0.1 : -r * 0.1)); g.lineTo(ex + r * 0.25, ey + r * 0.3); g.lineTo(ex - r * 0.25, ey + r * 0.3); }
+      else g.rect(ex - r * 0.25, ey - r * 0.04, r * 0.5, r * 0.4);
+      g.clip();
+      g.fillStyle = '#1c1612';
+      g.beginPath(); g.ellipse(ex, ey, r * 0.17, r * 0.21, 0, 0, 7); g.fill();
+      const px = face === 'grumpy' ? ex + r * 0.06 : ex;
+      const ig2 = g.createRadialGradient(px, ey + r * 0.08, 0, px, ey + r * 0.06, r * 0.17);
+      ig2.addColorStop(0, iris); ig2.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = ig2; g.beginPath(); g.ellipse(px, ey, r * 0.15, r * 0.19, 0, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(px + r * 0.05, ey + r * 0.05, r * 0.045, 0, 7); g.fill();
+      g.restore();
+      g.lineWidth = r * 0.075;
+      g.beginPath();
+      if (face === 'angry') { g.moveTo(ex + s * r * 0.22, ey - r * 0.4); g.lineTo(ex - s * r * 0.2, ey - r * 0.18); }
+      else { g.moveTo(ex - r * 0.2, ey - r * 0.04); g.lineTo(ex + r * 0.2, ey - r * 0.04); }
+      g.stroke();
+    }
+    if (face === 'angry') {
+      // 이마 위 빨간 화남 표시
+      g.save(); g.translate(r * 0.55, -r * 0.55); g.strokeStyle = '#e8352f'; g.lineWidth = r * 0.07;
+      for (const [a, b] of [[[-1, -0.35], [-0.35, -1]], [[0.35, -1], [1, -0.35]], [[1, 0.35], [0.35, 1]], [[-0.35, 1], [-1, 0.35]]]) {
+        g.beginPath(); g.moveTo(a[0] * r * 0.16, a[1] * r * 0.16); g.quadraticCurveTo(0, 0, b[0] * r * 0.16, b[1] * r * 0.16); g.stroke();
+      }
+      g.restore();
+    } else {
+      // 짜증: 이마에 파란 그늘 줄
+      g.save(); g.strokeStyle = 'rgba(70,110,200,0.55)'; g.lineWidth = r * 0.045;
+      for (const x of [-0.18, 0, 0.18]) { g.beginPath(); g.moveTo(x * r, -r * 0.72); g.lineTo(x * r, -r * 0.45); g.stroke(); }
+      g.restore();
+    }
+  } else if (face === 'cry') {
+    // 울음: 꼭 감은 눈과 흘러내리는 눈물
+    for (const s of [-1, 1]) {
+      const ex = s * r * 0.38;
+      g.beginPath(); g.moveTo(ex - r * 0.15, -r * 0.04); g.quadraticCurveTo(ex, r * 0.08, ex + r * 0.15, -r * 0.04); g.stroke();
+      g.beginPath(); g.moveTo(ex - s * r * 0.18, -r * 0.24); g.lineTo(ex + s * r * 0.12, -r * 0.16); g.stroke();
+      const tg = g.createLinearGradient(0, 0, 0, r * 0.75);
+      tg.addColorStop(0, 'rgba(120,200,255,0.95)'); tg.addColorStop(1, 'rgba(120,200,255,0.55)');
+      g.fillStyle = tg;
+      g.beginPath();
+      g.moveTo(ex - r * 0.07, r * 0.06);
+      g.quadraticCurveTo(ex - r * 0.1, r * 0.4, ex - r * 0.05, r * 0.72);
+      g.quadraticCurveTo(ex, r * 0.8, ex + r * 0.05, r * 0.72);
+      g.quadraticCurveTo(ex + r * 0.1, r * 0.4, ex + r * 0.07, r * 0.06);
+      g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.8)';
+      g.beginPath(); g.ellipse(ex - r * 0.02, r * 0.3, r * 0.02, r * 0.08, 0, 0, 7); g.fill();
+    }
+    g.strokeStyle = dark ? '#ffe9a0' : '#2b2118';
   } else if (face === 'happy') {
     for (const s of [-1, 1]) { g.beginPath(); g.arc(s * r * 0.38, r * 0.02, r * 0.14, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); }
   } else {
@@ -125,8 +180,24 @@ export function drawCatFace3D(g, r, fur, colors, face, nose) {
   else { g.beginPath(); g.moveTo(-r * 0.1, r * 0.15); g.quadraticCurveTo(0, r * 0.12, r * 0.1, r * 0.15); g.quadraticCurveTo(r * 0.04, r * 0.27, 0, r * 0.28); g.quadraticCurveTo(-r * 0.04, r * 0.27, -r * 0.1, r * 0.15); g.fill(); }
   g.strokeStyle = dark ? '#bbb' : line; g.lineWidth = r * 0.055;
   g.beginPath();
-  g.moveTo(0, r * 0.29); g.quadraticCurveTo(-r * 0.08, r * 0.43, -r * 0.2, r * 0.37);
-  g.moveTo(0, r * 0.29); g.quadraticCurveTo(r * 0.08, r * 0.43, r * 0.2, r * 0.37);
+  if (face === 'angry') {
+    // 이를 앙다문 입
+    g.moveTo(-r * 0.17, r * 0.45); g.quadraticCurveTo(0, r * 0.32, r * 0.17, r * 0.45);
+  } else if (face === 'grumpy') {
+    // 삐죽한 입
+    g.moveTo(-r * 0.15, r * 0.4); g.lineTo(-r * 0.05, r * 0.36); g.lineTo(r * 0.05, r * 0.4); g.lineTo(r * 0.15, r * 0.36);
+  } else if (face === 'cry') {
+    g.stroke();
+    // 엉엉 벌린 입
+    g.fillStyle = '#7a2a2a';
+    g.beginPath(); g.ellipse(0, r * 0.43, r * 0.12, r * 0.1, 0, 0, 7); g.fill();
+    g.fillStyle = '#f07a92';
+    g.beginPath(); g.ellipse(0, r * 0.48, r * 0.07, r * 0.04, 0, 0, 7); g.fill();
+    g.beginPath();
+  } else {
+    g.moveTo(0, r * 0.29); g.quadraticCurveTo(-r * 0.08, r * 0.43, -r * 0.2, r * 0.37);
+    g.moveTo(0, r * 0.29); g.quadraticCurveTo(r * 0.08, r * 0.43, r * 0.2, r * 0.37);
+  }
   g.stroke();
   // 수염
   g.strokeStyle = dark ? 'rgba(255,255,255,0.5)' : 'rgba(90,60,40,0.35)'; g.lineWidth = r * 0.025;
