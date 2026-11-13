@@ -65,8 +65,9 @@ export const HATS = {
     g.fillStyle = '#2b2530'; g.beginPath(); g.ellipse(0, -r * 0.78, r * 0.82, r * 0.36, 0, Math.PI, 0); g.fill();
     g.fillStyle = '#d93a5a'; g.fillRect(-r * 0.82, -r * 0.82, r * 1.64, r * 0.12);
     g.fillStyle = '#ffcf3f'; for (const s of [-1, 0, 1]) { g.beginPath(); g.arc(s * r * 0.45, -r * 0.98, r * 0.08, 0, 7); g.fill(); }
-    g.strokeStyle = '#e05a9b'; g.lineWidth = r * 0.07; g.beginPath(); g.moveTo(0, -r * 1.12); g.quadraticCurveTo(r * 0.2, -r * 0.5, r * 0.05, -r * 0.1); g.stroke();
-    g.fillStyle = '#e05a9b'; g.beginPath(); g.ellipse(r * 0.05, -r * 0.05, r * 0.08, r * 0.14, 0, 0, 7); g.fill();
+    // 술은 얼굴을 가리지 않게 옆으로 늘어뜨린다
+    g.strokeStyle = '#e05a9b'; g.lineWidth = r * 0.07; g.beginPath(); g.moveTo(r * 0.6, -r * 0.95); g.quadraticCurveTo(r * 1.0, -r * 0.6, r * 0.98, -r * 0.2); g.stroke();
+    g.fillStyle = '#e05a9b'; g.beginPath(); g.ellipse(r * 0.98, -r * 0.12, r * 0.08, r * 0.14, 0, 0, 7); g.fill();
   },
   gat(g, r) {
     g.fillStyle = 'rgba(30,26,30,.85)'; g.beginPath(); g.ellipse(0, -r * 0.82, r * 1.25, r * 0.22, 0, 0, 7); g.fill();
