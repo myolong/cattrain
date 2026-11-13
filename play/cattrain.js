@@ -182,23 +182,60 @@ const groundTile = (function () {
   c.width = c.height = 224;
   const g = c.getContext('2d');
   if (SNOW) {
-    // 눈 덮인 바닥: 옅은 하늘색 격자 + 반짝이는 눈 알갱이 + 작은 발자국
-    g.fillStyle = '#f2f7fc'; g.fillRect(0, 0, 224, 224);
-    g.fillStyle = '#e6eff8';
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2 === 0) g.fillRect(i * 56, j * 56, 56, 56);
-    for (let k = 0; k < 26; k++) {
-      g.fillStyle = k % 3 ? 'rgba(160,190,220,.45)' : '#fff';
-      g.beginPath(); g.arc(Math.random() * 224, Math.random() * 224, 1 + Math.random() * 1.8, 0, 7); g.fill();
+    // 눈 덮인 바닥: 격자 없이 하얀 눈밭에 옅은 하늘색 그늘이 번지고, 반짝이는 눈 알갱이와 고양이 발자국
+    const W = 480;
+    c.width = c.height = W;
+    const wrap = (fn) => { for (const ox of [-W, 0, W]) for (const oy of [-W, 0, W]) fn(ox, oy); };
+    g.fillStyle = '#f4f8fc'; g.fillRect(0, 0, W, W);
+    const patches = ['rgba(195,218,242,.7)', 'rgba(255,255,255,.85)', 'rgba(178,205,236,.45)', 'rgba(222,234,250,.65)'];
+    for (let k = 0; k < 22; k++) {
+      const x = Math.random() * W, y = Math.random() * W, r = 40 + Math.random() * 80, col = patches[k % patches.length];
+      wrap((ox, oy) => {
+        const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        gr.addColorStop(0, col); gr.addColorStop(1, col.replace(/[\d.]+\)$/, '0)'));
+        g.fillStyle = gr; g.beginPath(); g.arc(x + ox, y + oy, r, 0, 7); g.fill();
+      });
     }
+    // 바람에 쓸린 눈 결
+    g.strokeStyle = 'rgba(170,198,228,.35)'; g.lineWidth = 1.4; g.lineCap = 'round';
+    for (let k = 0; k < 40; k++) {
+      const x = Math.random() * W, y = Math.random() * W, l = 8 + Math.random() * 14;
+      g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - 2.5, x + l, y); g.stroke();
+    }
+    // 반짝이 눈 알갱이
+    for (let k = 0; k < 70; k++) {
+      const x = Math.random() * W, y = Math.random() * W, r = 0.8 + Math.random() * 1.6;
+      g.fillStyle = k % 4 ? 'rgba(160,190,225,.45)' : '#fff';
+      g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    }
+    for (let k = 0; k < 10; k++) {
+      // 반짝 별
+      const x = 10 + Math.random() * (W - 20), y = 10 + Math.random() * (W - 20), r = 2.5 + Math.random() * 2;
+      g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(x - r, y); g.lineTo(x + r, y); g.moveTo(x, y - r); g.lineTo(x, y + r); g.stroke();
+    }
+    // 고양이 발자국 줄
     for (let k = 0; k < 2; k++) {
-      // 고양이 발자국
-      const x = 30 + Math.random() * 164, y = 30 + Math.random() * 164;
-      g.fillStyle = 'rgba(150,175,205,.5)';
-      for (let p = 0; p < 3; p++) {
-        const px = x + p * 14, py = y + (p % 2) * 9;
-        g.beginPath(); g.ellipse(px, py, 3.2, 2.6, 0, 0, 7); g.fill();
-        for (let t = -1; t <= 1; t++) { g.beginPath(); g.arc(px + t * 2.6, py - 4, 1.2, 0, 7); g.fill(); }
+      const x0 = 40 + Math.random() * (W - 160), y0 = 40 + Math.random() * (W - 80), a = (Math.random() - 0.5) * 0.8;
+      g.fillStyle = 'rgba(150,180,215,.45)';
+      for (let p = 0; p < 6; p++) {
+        const px = x0 + Math.cos(a) * p * 16 + (p % 2 ? 0 : 0), py = y0 + Math.sin(a) * p * 16 + (p % 2 ? 6 : -6);
+        g.save(); g.translate(px, py); g.rotate(a + Math.PI / 2);
+        g.beginPath(); g.ellipse(0, 0, 3.2, 2.7, 0, 0, 7); g.fill();
+        for (let t = -1; t <= 1; t++) { g.beginPath(); g.arc(t * 2.7, -4.2, 1.2, 0, 7); g.fill(); }
+        g.restore();
       }
+    }
+    // 작은 눈사람 하나
+    {
+      const x = 60 + Math.random() * (W - 120), y = 60 + Math.random() * (W - 120);
+      g.fillStyle = 'rgba(150,180,215,.35)'; g.beginPath(); g.ellipse(x + 2, y + 11, 11, 4, 0, 0, 7); g.fill();
+      g.fillStyle = '#fff'; g.strokeStyle = '#c9dbef'; g.lineWidth = 1.2;
+      g.beginPath(); g.arc(x, y + 4, 8, 0, 7); g.fill(); g.stroke();
+      g.beginPath(); g.arc(x, y - 7, 5.5, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = '#333'; g.beginPath(); g.arc(x - 2, y - 8, 0.9, 0, 7); g.arc(x + 2, y - 8, 0.9, 0, 7); g.fill();
+      g.fillStyle = '#f08a2c'; g.beginPath(); g.moveTo(x, y - 6.5); g.lineTo(x + 4, y - 5.8); g.lineTo(x, y - 5.2); g.fill();
+      g.fillStyle = '#e8573a'; g.fillRect(x - 5, y - 2.5, 10, 2);
     }
     return ctx.createPattern(c, 'repeat');
   }
