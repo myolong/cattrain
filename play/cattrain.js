@@ -2,16 +2,18 @@
 // 같이 하기 서버(server-config.js의 주소)에 붙으면 다른 사람들과 한 놀이터에서 놀고,
 // 서버가 없거나 연결이 안 되면 컴퓨터 냥이들과 혼자 논다.
 import * as S from './sim.js';
+import * as D from './deco.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('canvas');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d');   // 꾸미기 미리보기를 그릴 때 잠깐 바꿔 끼운다
 const FONT = '"Jua", -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
-const { WORLD, GAUGE_MAX, START_LEN, FUR_KEYS, PICK_FURS, SCARVES, FISH_COLORS } = S;
+const { WORLD, GAUGE_MAX, START_LEN, FUR_KEYS, PICK_FURS, SCARVES, FISH_COLORS, LEADER_FURS, SPECIAL_FURS, HAT_KEYS, TAIL_KEYS } = S;
 
 const BEST_KEY = 'nyang-cattrain-best';
 const FUR_KEY = 'nyang-cattrain-fur';
 const NAME_KEY = 'nyang-nickname';
+const DECO_KEY = 'nyang-cattrain-deco';
 const SERVER = String(window.CATTRAIN_SERVER || '').replace(/\/+$/, '');
 let interpMs = 90;          // 다른 기차는 서버 모습을 이만큼 늦게 보여 주며 사이를 부드럽게 잇는다 (인터넷 상태에 맞춰 바뀜)
 
@@ -22,6 +24,7 @@ const FURS = {
   black: ['#3b3a40', '#22212a'],
   calico: ['#fbf6ee', '#e08a3c'],
   cream: ['#f3d9a8', '#d6b47a'],
+  ...D.FUR_COLORS,
 };
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -89,10 +92,14 @@ function drawCatFace(g, fur, face) {
   g.stroke();
   g.fillStyle = 'rgba(255,120,140,.35)';
   for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s * r * 0.62, r * 0.28, r * 0.14, r * 0.09, 0, 0, 7); g.fill(); }
+  if (D.NOSE[fur]) {
+    g.fillStyle = D.NOSE[fur]; g.beginPath(); g.arc(0, r * 0.22, r * 0.16, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(-r * 0.05, r * 0.16, r * 0.055, 0, 7); g.fill();
+  }
   g.restore();
 }
 const sprites = {};
-for (const fur of FUR_KEYS) {
+for (const fur of LEADER_FURS) {
   sprites[fur] = {};
   for (const face of ['normal', 'happy', 'dizzy']) {
     const c = document.createElement('canvas');
@@ -149,7 +156,7 @@ function localScene() {
   const order = S.ranked(local);
   const top = order[0];
   const trains = local.trains.filter((t) => t.alive).map((t) => ({
-    id: t.id, name: t.name, fur: t.fur, scarf: t.scarf, bot: t.bot, x: t.x, y: t.y, a: t.a,
+    id: t.id, name: t.name, fur: t.fur, scarf: t.scarf, bot: t.bot, x: t.x, y: t.y, a: t.a, hat: t.hat, tail: t.tail,
     kids: t.kids, segs: t.segs, dash: t.dashNow, invul: t.invul > 0, crown: t === top,
   }));
   const me = localMe && localMe.alive ? trains.find((t) => t.id === localMe.id) : null;
@@ -192,7 +199,7 @@ function localStep(dt) {
 function localJoin(cont) {
   let kids;
   if (cont && run.lastKids) kids = run.lastKids.slice(0, Math.max(START_LEN, Math.ceil(run.lastKids.length / 2)));
-  localMe = S.addPlayer(local, { name: run.name, fur: run.fur, kids: kids });
+  localMe = S.addPlayer(local, { name: run.name, fur: run.fur, kids: kids, hat: run.hat, tail: run.tail });
   run.joinedAt = local.now;
   input.a = localMe.a;
 }
@@ -317,7 +324,7 @@ function onServer(m, e) {
 
 function joinOnline(cont) {
   sendView();
-  sendNet({ t: 'join', name: run.name, fur: run.fur, cont: !!cont });
+  sendNet({ t: 'join', name: run.name, fur: run.fur, hat: run.hat, tail: run.tail, cont: !!cont });
 }
 
 // 받아 둔 서버 모습 두 장 사이를 이어서 지금 그릴 모습을 만든다.
@@ -387,7 +394,8 @@ function rowToTrain(r) {
   const kids = [];
   for (const ch of r[8]) kids.push(FUR_KEYS[+ch] || 'orange');
   return {
-    id: r[0], x: r[1], y: r[2], a: r[3] / 100, fur: FUR_KEYS[r[4]] || 'orange', scarf: SCARVES[r[5]] || SCARVES[1],
+    id: r[0], x: r[1], y: r[2], a: r[3] / 100, fur: LEADER_FURS[r[4]] || 'orange', scarf: SCARVES[r[5]] || SCARVES[1],
+    hat: HAT_KEYS[(r[10] || 0) - 1] || '', tail: TAIL_KEYS[(r[11] || 0) - 1] || '',
     bot: !!(r[6] & 1), dash: !!(r[6] & 2), invul: !!(r[6] & 4), crown: !!(r[6] & 8), name: r[7], kids: kids, segs: segs,
   };
 }
@@ -581,6 +589,9 @@ function drawTrain(t) {
   if (t.invul && Math.floor(clock * 8) % 2 === 0) ctx.globalAlpha = 0.45;
   const segs = t.segs;
   const tc = tailColor(t);
+  const tail = t.tail && D.TAILS[t.tail];
+  const pts = tail ? [{ x: t.x, y: t.y, a: t.a }].concat(segs) : null;
+  if (tail && tail.under) tail.under(ctx, pts, kr, clock);
   if (segs.length) {
     ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = r * 0.45; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(t.x, t.y);
@@ -593,15 +604,23 @@ function drawTrain(t) {
     drawCollar(s.x, s.y, kr, s.a, tc);
     drawSprite((sprites[t.kids[i]] || sprites.orange)[face], s.x, s.y, kr, s.a);
   }
+  if (tail && tail.over && pts.length > 1) tail.over(ctx, pts, kr, clock);
   ctx.save();
   ctx.translate(t.x, t.y); ctx.rotate(t.a + Math.PI / 2);
   ctx.fillStyle = tc;
   ctx.beginPath(); ctx.ellipse(0, r * 0.85, r * 0.78, r * 0.24, 0, 0, 7); ctx.fill();
   ctx.restore();
-  drawSprite(sprites[t.fur].normal, t.x, t.y, r, t.a);
+  drawSprite((sprites[t.fur] || sprites.orange).normal, t.x, t.y, r, t.a);
+  if (t.hat && D.HATS[t.hat]) {
+    ctx.save();
+    ctx.translate(t.x, t.y); ctx.rotate(t.a + Math.PI / 2);
+    D.HATS[t.hat](ctx, r);
+    ctx.restore();
+  }
   if (t.crown) {
     ctx.save();
     ctx.translate(t.x, t.y); ctx.rotate(t.a + Math.PI / 2);
+    if (t.hat) ctx.translate(0, -r * Math.max(0, (D.HAT_TOP[t.hat] || 1) - 0.75));
     ctx.fillStyle = '#ffd23f'; ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(-r * 0.45, -r * 0.8); ctx.lineTo(-r * 0.45, -r * 1.3); ctx.lineTo(-r * 0.2, -r * 1.05);
@@ -791,22 +810,159 @@ const startEl = $('start');
 const nameEl = $('name');
 const fursEl = $('furs');
 const goBtn = $('go');
+// ───── 꾸미기 (광고 보고 여는 털색·모자·꼬리 장식, 이 기기에 저장) ─────
+const deco = (function () {
+  let d = {};
+  try { d = JSON.parse(localStorage.getItem(DECO_KEY) || '{}') || {}; } catch (e) {}
+  return {
+    own: Array.isArray(d.own) ? d.own.filter((x) => typeof x === 'string') : [],
+    hat: HAT_KEYS.includes(d.hat) ? d.hat : '',
+    tail: TAIL_KEYS.includes(d.tail) ? d.tail : '',
+  };
+})();
+function saveDeco() { save(DECO_KEY, JSON.stringify(deco)); }
+const owns = (kind, key) => (kind === 'fur' && PICK_FURS.includes(key)) || deco.own.includes(kind + ':' + key);
+if (!owns('hat', deco.hat)) deco.hat = '';
+if (!owns('tail', deco.tail)) deco.tail = '';
+
+const FUR_NAMES = { orange: '치즈', gray: '회색', white: '흰색', black: '검정', calico: '삼색', rudolph: '루돌프', snow: '눈송이', gold: '황금 복냥', sakura: '벚꽃' };
 let chosenFur = load(FUR_KEY, 'orange');
-if (!PICK_FURS.includes(chosenFur)) chosenFur = 'orange';
-PICK_FURS.forEach((fur) => {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.setAttribute('role', 'radio');
-  b.setAttribute('aria-label', { orange: '치즈', gray: '회색', white: '흰색', black: '검정', calico: '삼색' }[fur]);
-  b.style.backgroundImage = 'url(' + sprites[fur].normal.toDataURL() + ')';
-  b.addEventListener('click', () => { chosenFur = fur; save(FUR_KEY, fur); paintFurs(); });
-  b.dataset.fur = fur;
-  fursEl.append(b);
-});
+if (!LEADER_FURS.includes(chosenFur) || !owns('fur', chosenFur)) chosenFur = 'orange';
+function setFur(fur) { chosenFur = fur; save(FUR_KEY, fur); paintFurs(); }
 function paintFurs() {
-  for (const b of fursEl.children) b.setAttribute('aria-checked', String(b.dataset.fur === chosenFur));
+  fursEl.textContent = '';
+  for (const fur of PICK_FURS.concat(SPECIAL_FURS.filter((f) => owns('fur', f)))) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', FUR_NAMES[fur] || fur);
+    b.setAttribute('aria-checked', String(fur === chosenFur));
+    b.style.backgroundImage = 'url(' + sprites[fur].normal.toDataURL() + ')';
+    b.addEventListener('click', () => setFur(fur));
+    fursEl.append(b);
+  }
 }
 paintFurs();
+
+// 작은 기차 그림: 게임과 같은 그리기 함수로 다른 캔버스에 그린다.
+function drawMini(g, w, h, o) {
+  const prev = ctx;
+  ctx = g;
+  g.save();
+  g.clearRect(0, 0, w, h);
+  const len = o.len || 0;
+  const r = o.r || 20, kr = r * 0.74;
+  const t = { id: 1, x: o.x, y: o.y, a: o.a || 0, fur: o.fur, hat: o.hat || '', tail: o.tail || '', kids: [], segs: [] };
+  const furs = ['white', 'calico', 'gray', 'cream', 'black', 'orange'];
+  let px = t.x, py = t.y;
+  for (let i = 0; i < len; i++) {
+    const x = t.x - Math.cos(t.a) * (r * 1.05 + i * kr * 1.55);
+    const y = t.y - Math.sin(t.a) * (r * 1.05 + i * kr * 1.55) + (o.wave ? Math.sin(i * 1.1 + clock * 2) * kr * 0.35 : 0);
+    t.segs.push({ x: x, y: y, a: Math.atan2(py - y, px - x) });
+    t.kids.push(furs[i % furs.length]);
+    px = x; py = y;
+  }
+  t.kids.length = len;
+  // drawTrain은 아기냥 수로 머리 크기를 정하므로, 미리보기는 크기를 직접 맞춘다
+  const k = r / headR(t);
+  g.translate(t.x, t.y); g.scale(k, k); g.translate(-t.x, -t.y);
+  drawTrain(t);
+  g.restore();
+  ctx = prev;
+}
+function miniCanvas(w, h) {
+  const c = document.createElement('canvas');
+  const s = Math.min(2, window.devicePixelRatio || 1);
+  c.width = w * s; c.height = h * s;
+  c.style.width = w + 'px'; c.style.height = h + 'px';
+  const g = c.getContext('2d');
+  g.scale(s, s);
+  return { c: c, g: g };
+}
+
+const shopEl = $('shop');
+const shopList = $('shop-list');
+const shopPrev = miniCanvas(300, 110);
+$('shop-preview').append(shopPrev.c);
+let shopAnim = 0;
+function shopFrame() {
+  if (!shopEl.open) { shopAnim = 0; return; }
+  drawMini(shopPrev.g, 300, 110, { x: 230, y: 62, a: 0, r: 24, len: 5, fur: chosenFur, hat: deco.hat, tail: deco.tail, wave: true });
+  shopAnim = requestAnimationFrame(shopFrame);
+}
+
+function equipped(kind, key) {
+  return kind === 'hat' ? deco.hat === key : kind === 'tail' ? deco.tail === key : chosenFur === key;
+}
+function equip(kind, key) {
+  if (kind === 'hat') deco.hat = deco.hat === key ? '' : key;
+  else if (kind === 'tail') deco.tail = deco.tail === key ? '' : key;
+  else setFur(chosenFur === key && SPECIAL_FURS.includes(key) ? 'orange' : key);
+  saveDeco();
+}
+
+function itemCard(kind, key, name, theme) {
+  const li = document.createElement('li');
+  const mc = miniCanvas(96, 76);
+  if (kind === 'tail') drawMini(mc.g, 96, 76, { x: 80, y: 40, a: 0, r: 13, len: 4, fur: 'orange', tail: key });
+  else drawMini(mc.g, 96, 76, { x: 48, y: 48, a: -Math.PI / 2, r: 22, len: 0, fur: kind === 'fur' ? key : 'orange', hat: kind === 'hat' ? key : '' });
+  li.append(mc.c);
+  const nm = document.createElement('b'); nm.textContent = name; li.append(nm);
+  if (theme) {
+    const tg = document.createElement('span'); tg.className = 'tag';
+    tg.textContent = D.THEMES[theme][0]; tg.style.background = D.THEMES[theme][1];
+    li.append(tg);
+  }
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  const have = owns(kind, key), on = equipped(kind, key);
+  if (!have) {
+    li.classList.add('locked');
+    btn.className = 'ad'; btn.textContent = '🎬 광고 보고 열기';
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      let ok = false;
+      try { ok = await window.showRewardedAd('unlock_' + kind + '_' + key, name); } catch (e) { ok = false; }
+      if (ok) {
+        if (!deco.own.includes(kind + ':' + key)) deco.own.push(kind + ':' + key);
+        saveDeco();
+        equip(kind, key);
+        if (kind === 'fur') paintFurs();
+      }
+      renderShop();
+    });
+  } else {
+    btn.className = on ? 'on' : 'use';
+    btn.textContent = on ? '✔ 쓰는 중' : '쓰기';
+    btn.addEventListener('click', () => { equip(kind, key); renderShop(); });
+  }
+  li.append(btn);
+  return li;
+}
+
+function renderShop() {
+  shopList.textContent = '';
+  const sec = (title, kind, list) => {
+    const h = document.createElement('h3'); h.textContent = title; shopList.append(h);
+    const ul = document.createElement('ul'); ul.className = 'items';
+    for (const it of list) ul.append(itemCard(kind, it[1], it[2], it[3]));
+    shopList.append(ul);
+  };
+  sec('🎩 모자', 'hat', D.ITEMS.filter((i) => i[0] === 'hat'));
+  sec('🐱 대장 냥이 털색', 'fur', PICK_FURS.map((f) => ['fur', f, FUR_NAMES[f] + ' (기본)', '']).concat(D.ITEMS.filter((i) => i[0] === 'fur')));
+  sec('✨ 꼬리 장식', 'tail', D.ITEMS.filter((i) => i[0] === 'tail'));
+  const n = deco.own.length, all = D.ITEMS.length;
+  $('shop-count').textContent = n + ' / ' + all + '개 열림';
+}
+
+$('shop-btn').addEventListener('click', () => {
+  renderShop();
+  // 모달로 열면 브라우저 맨 위층에 떠서 광고가 그 밑에 깔린다. 그래서 보통 창으로 연다.
+  shopEl.show();
+  if (!shopAnim) shopAnim = requestAnimationFrame(shopFrame);
+});
+shopEl.addEventListener('close', () => { paintFurs(); });
+if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) $('pc-tip').hidden = false;
 nameEl.value = load(NAME_KEY, '');
 if (SERVER) $('mode-note').hidden = false;
 
@@ -828,7 +984,7 @@ function startLocal() {
 }
 
 function newRun(name, fur) {
-  run = { name: name, fur: fur, max: 0, lived: 0, joinedAt: 0, continued: false, lastKids: null };
+  run = { name: name, fur: fur, hat: deco.hat, tail: deco.tail, max: 0, lived: 0, joinedAt: 0, continued: false, lastKids: null };
 }
 
 function startRun() {
@@ -904,7 +1060,7 @@ dialog.addEventListener('close', () => {
   const cont = dialog.returnValue === 'continue' && !run.continued;
   // 이어하기는 나중에 보상형 광고를 붙일 자리. 지금은 한 판에 한 번 그냥 이어 할 수 있다.
   if (cont) run.continued = true;
-  else newRun(run.name, run.fur);
+  else newRun(run.name, chosenFur);
   if (mode === 'online') {
     if (net.ws && net.ws.readyState === 1) {
       joinOnline(cont);

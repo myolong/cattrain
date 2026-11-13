@@ -26,6 +26,7 @@
     <div class="panel">
       <p class="label">대장 냥이 털색</p>
       <div class="furs" id="furs" role="radiogroup" aria-label="대장 냥이 털색"></div>
+      <button type="button" class="shop-btn" id="shop-btn">🎀 냥이 꾸미기 <small>모자 · 털색 · 꼬리 장식</small></button>
     </div>
     <label class="name">이름 <input id="name" maxlength="8" autocomplete="off" placeholder="치즈대장"></label>
     <ul class="rules">
@@ -37,8 +38,23 @@
       <li>💥 다른 기차 몸에 머리를 박으면 끝!</li>
       <li>🤖 표시는 컴퓨터 냥이, 노란 이름은 다른 사람이에요</li>
     </ul>
+    <p class="pc-tip" id="pc-tip" hidden>💻 PC에서 하면 더 넓게 보여서 훨씬 재밌어요!</p>
     <button type="button" class="go" id="go">출발!</button>
   </section>
+
+  <dialog id="shop" class="shop">
+    <form method="dialog">
+      <div class="shop-head">
+        <p class="shop-title">냥이 꾸미기</p>
+        <button type="submit" class="shop-close" aria-label="닫기">✕</button>
+      </div>
+      <p class="shop-sub">광고 한 번이면 하나씩 열려요 · 실력엔 영향 없어요 · <span id="shop-count"></span></p>
+      <div class="shop-preview" id="shop-preview"></div>
+      <div id="shop-list"></div>
+      <p class="shop-note">열린 꾸미기는 이 기기에 저장되고, 같이 하기에서 다른 사람에게도 보여요. 쓰는 중인 것을 한 번 더 누르면 벗어요.</p>
+      <button type="submit" class="shop-done">다 골랐어요</button>
+    </form>
+  </dialog>
 
   <dialog id="result">
     <form method="dialog">
