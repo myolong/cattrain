@@ -124,10 +124,41 @@ function drawSprite(img, x, y, r, a) {
   ctx.restore();
 }
 
+// 계절 맵: 12월~2월에는 눈 오는 놀이터. 주소 끝에 ?season=snow / ?season=grass 로 미리 볼 수 있다.
+const SNOW = (function () {
+  const q = new URLSearchParams(location.search).get('season');
+  if (q === 'snow') return true;
+  if (q === 'grass') return false;
+  const m = new Date().getMonth() + 1;
+  return m === 12 || m <= 2;
+})();
+const OUTSIDE = SNOW ? '#9fb9cf' : '#5c9a59';
+
 const groundTile = (function () {
   const c = document.createElement('canvas');
   c.width = c.height = 224;
   const g = c.getContext('2d');
+  if (SNOW) {
+    // 눈 덮인 바닥: 옅은 하늘색 격자 + 반짝이는 눈 알갱이 + 작은 발자국
+    g.fillStyle = '#f2f7fc'; g.fillRect(0, 0, 224, 224);
+    g.fillStyle = '#e6eff8';
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2 === 0) g.fillRect(i * 56, j * 56, 56, 56);
+    for (let k = 0; k < 26; k++) {
+      g.fillStyle = k % 3 ? 'rgba(160,190,220,.45)' : '#fff';
+      g.beginPath(); g.arc(Math.random() * 224, Math.random() * 224, 1 + Math.random() * 1.8, 0, 7); g.fill();
+    }
+    for (let k = 0; k < 2; k++) {
+      // 고양이 발자국
+      const x = 30 + Math.random() * 164, y = 30 + Math.random() * 164;
+      g.fillStyle = 'rgba(150,175,205,.5)';
+      for (let p = 0; p < 3; p++) {
+        const px = x + p * 14, py = y + (p % 2) * 9;
+        g.beginPath(); g.ellipse(px, py, 3.2, 2.6, 0, 0, 7); g.fill();
+        for (let t = -1; t <= 1; t++) { g.beginPath(); g.arc(px + t * 2.6, py - 4, 1.2, 0, 7); g.fill(); }
+      }
+    }
+    return ctx.createPattern(c, 'repeat');
+  }
   g.fillStyle = '#8fd18a'; g.fillRect(0, 0, 224, 224);
   g.fillStyle = '#86c981';
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if ((i + j) % 2 === 0) g.fillRect(i * 56, j * 56, 56, 56);
@@ -139,6 +170,18 @@ const groundTile = (function () {
   }
   return ctx.createPattern(c, 'repeat');
 })();
+
+// 화면 위로 내리는 눈송이 (화면 기준이라 서버와 상관없다)
+const flakes = SNOW ? Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), r: 1.5 + Math.random() * 2.5, v: 0.05 + Math.random() * 0.07, w: Math.random() * 6 })) : [];
+function drawSnowfall(dt) {
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  for (const f of flakes) {
+    f.y += f.v * dt * (0.6 + f.r / 4);
+    if (f.y > 1.02) { f.y = -0.02; f.x = Math.random(); }
+    const x = (f.x + Math.sin(clock * 0.8 + f.w) * 0.015) * vw, y = f.y * vh;
+    ctx.beginPath(); ctx.arc(x, y, f.r, 0, 7); ctx.fill();
+  }
+}
 
 // ───── 상태 ─────
 // mode: 'local'(혼자, 컴퓨터 냥이만) | 'online'(같이 하기 서버)
@@ -256,8 +299,14 @@ function onServer(m, e) {
   } else if (m.t === 'full') {
     // 방이 꽉 찼으면 다음 방으로
     net.full = true;
-    net.room++;
-    if (net.room > 5) { startLocal(); return; }
+    if (typeof net.room === 'string') {
+      // 친구 방이 꽉 찼으면 모두가 노는 1번 놀이터로
+      net.room = 1;
+      floats.push({ text: '친구 방이 꽉 차서 모두의 놀이터로 왔어요', t: -2.5, screen: true });
+    } else {
+      net.room++;
+      if (net.room > 5) { startLocal(); return; }
+    }
     connect(() => { net.full = false; joinOnline(false); }, startLocal);
   } else if (m.t === 'joined') {
     net.meId = m.id;
@@ -660,7 +709,7 @@ function drawTrain(t) {
 
 function render() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#5c9a59';
+  ctx.fillStyle = OUTSIDE;
   ctx.fillRect(0, 0, vw, vh);
   if (!scene) return;
   const z = cam.z;
@@ -708,6 +757,8 @@ function render() {
     ctx.globalAlpha = 1;
   }
   ctx.restore();
+  if (SNOW) drawSnowfall(Math.min(0.05, clock - (render.lastClock || clock)));
+  render.lastClock = clock;
   if (state === 'play' || state === 'dying') drawHud();
 }
 
@@ -724,7 +775,7 @@ function drawHud() {
   }
   if (mode === 'online') {
     ctx.fillStyle = 'rgba(255,255,255,.85)'; rrect(12, top + 68, 150, 24, 12); ctx.fill();
-    text('👥 지금 ' + scene.hc + '명 놀이 중', 87, top + 80, 12.5, '#2f7a3f');
+    text((typeof net.room === 'string' ? '👫 친구 방 · ' : '👥 지금 ') + scene.hc + '명 놀이 중', 87, top + 80, 12.5, '#2f7a3f');
   }
   // 순위
   const w = 150, x0 = vw - w - 12;
@@ -1049,6 +1100,61 @@ for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', 
 }
 nameEl.value = load(NAME_KEY, '');
 if (SERVER) $('mode-note').hidden = false;
+if (SNOW) document.querySelector('.start .site').textContent = '❄️ 겨울 한정 · 눈 오는 놀이터';
+
+// ───── 친구 초대: 주소의 ?room=코드 로 같은 친구 방에 들어간다 ─────
+const ROOM_RE = /^[a-z0-9]{5,8}$/;
+let friendRoom = '';
+function inviteLink(code) {
+  const u = new URL(location.href);
+  u.search = '';
+  u.hash = '';
+  if (code) u.searchParams.set('room', code);
+  return u.toString();
+}
+function setFriendRoom(code) {
+  friendRoom = code;
+  try { history.replaceState(null, '', inviteLink(code)); } catch (e) {}
+  $('invite-box').hidden = !code;
+  $('invite-btn').hidden = !!code;
+  $('invite-link').value = code ? inviteLink(code) : '';
+  $('mode-note').textContent = code ? '👫 친구 방에서 놀아요 (방 이름 ' + code + ')' : '👥 다른 사람들과 같은 놀이터에서 놀아요';
+}
+function newRoomCode() {
+  const abc = 'abcdefghjkmnpqrstuvwxyz', all = abc + '23456789';
+  let c = abc[Math.floor(Math.random() * abc.length)];
+  while (c.length < 6) c += all[Math.floor(Math.random() * all.length)];
+  return c;
+}
+if (SERVER) {
+  $('invite').hidden = false;
+  const q = new URLSearchParams(location.search).get('room');
+  if (q && ROOM_RE.test(q.toLowerCase()) && !/^\d+$/.test(q)) {
+    setFriendRoom(q.toLowerCase());
+    $('invite-msg').textContent = '친구가 초대한 방이에요. 출발하면 친구와 같은 놀이터에서 만나요!';
+  }
+  $('invite-btn').addEventListener('click', () => {
+    setFriendRoom(newRoomCode());
+    $('invite-msg').textContent = '이 링크를 친구에게 보내 주세요. 링크로 들어온 친구와 같은 놀이터에서 만나요!';
+  });
+  $('invite-leave').addEventListener('click', () => setFriendRoom(''));
+  const copyBtn = $('invite-copy');
+  copyBtn.addEventListener('click', async () => {
+    const link = $('invite-link').value;
+    try { await navigator.clipboard.writeText(link); }
+    catch (e) { $('invite-link').select(); try { document.execCommand('copy'); } catch (err) {} }
+    copyBtn.textContent = '✅ 복사했어요';
+    setTimeout(() => { copyBtn.textContent = '🔗 링크 복사'; }, 1500);
+  });
+  $('invite-share').addEventListener('click', async () => {
+    const link = $('invite-link').value;
+    if (navigator.share) {
+      try { await navigator.share({ title: '냥이 꼬리기차', text: '나랑 같은 놀이터에서 냥이 꼬리기차 하자!', url: link }); } catch (e) {}
+    } else {
+      copyBtn.click();
+    }
+  });
+}
 
 function beginPlay() {
   startEl.hidden = true;
@@ -1079,7 +1185,7 @@ function startRun() {
   state = 'connecting';
   goBtn.disabled = true;
   goBtn.textContent = '연결 중…';
-  net.room = 1;
+  net.room = friendRoom || 1;
   net.full = false;
   connect(() => {
     goBtn.disabled = false; goBtn.textContent = '출발!';
