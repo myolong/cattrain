@@ -1287,6 +1287,7 @@ else {
   // PC(마우스) 조작 설명
   $('rule-move').textContent = '🖱️ 마우스를 가고 싶은 쪽에 두면 따라가요';
   $('rule-dash').textContent = '💨 마우스를 누르고 있거나 스페이스바를 누르면 달려요 (꼬리 냥이가 조금씩 떨어져요)';
+  $('rule-emote').textContent = '💬 숫자키 1~6이나 오른쪽 아래 💬 버튼으로 "냥! 👋" 인사를 보내요';
 }
 // 규칙 설명의 독버섯·양파 그림은 게임 화면과 똑같이 그린다
 for (const [id, fn, cy, k] of [['ri-mush', drawMushroom, 19, 1.3], ['ri-onion', drawOnion, 19, 0.85]]) {
