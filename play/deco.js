@@ -129,20 +129,26 @@ export const TAILS = {
     },
   },
   lights: {
-    over(g, pts, kr, clock) {
+    // 전구 줄은 아기냥 뒤로 지나가고, 전구는 양옆으로 번갈아 삐져나오게 (얼굴을 가리지 않게)
+    under(g, pts, kr, clock) {
       const cs = ['#ff4d4d', '#ffd23f', '#4dd2ff', '#7cff6b'];
       const side = (p, f) => ({ x: p.x - Math.sin(p.a) * kr * f, y: p.y + Math.cos(p.a) * kr * f });
-      g.strokeStyle = '#2f6b3a'; g.lineWidth = Math.max(1.5, kr * 0.12); g.lineCap = 'round';
+      const bulbs = [];
+      g.strokeStyle = '#2f6b3a'; g.lineWidth = Math.max(1.5, kr * 0.12); g.lineCap = 'round'; g.lineJoin = 'round';
       g.beginPath();
-      for (let i = 0; i < pts.length; i++) { const q = side(pts[i], 0.85); i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y); }
+      for (let i = 0; i < pts.length; i++) {
+        const q = side(pts[i], i % 2 ? 1.4 : -1.4);
+        i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y);
+        if (i > 0) bulbs.push(q);
+      }
       g.stroke();
-      const blink = Math.floor(clock * 3);
-      for (let i = 1; i < pts.length; i++) {
-        const q = side(pts[i], 0.85), c = cs[i % 4];
+      const blink = Math.floor(clock * 2.5);
+      for (let i = 0; i < bulbs.length; i++) {
+        const q = bulbs[i], c = cs[i % 4];
         const on = (i + blink) % 3 !== 0;
-        if (on) { g.globalAlpha = 0.35; g.fillStyle = c; g.beginPath(); g.arc(q.x, q.y, kr * 0.6, 0, 7); g.fill(); g.globalAlpha = 1; }
-        g.fillStyle = on ? c : '#777';
-        g.beginPath(); g.ellipse(q.x, q.y, kr * 0.3, kr * 0.3, 0, 0, 7); g.fill();
+        if (on) { g.globalAlpha = 0.3; g.fillStyle = c; g.beginPath(); g.arc(q.x, q.y, kr * 0.5, 0, 7); g.fill(); g.globalAlpha = 1; }
+        g.fillStyle = on ? c : '#8a8a8a';
+        g.beginPath(); g.arc(q.x, q.y, kr * 0.3, 0, 7); g.fill();
       }
     },
   },
