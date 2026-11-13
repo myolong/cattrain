@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 
 Sitemap: https://nyangtrain.com/sitemap.xml
+
+#DaumWebMasterTool:57f07baf6e0ce5ce305060f88a0bc71d726000ec6523782f2a89b09614f1ab46:LJPampnqaffzNtkuALZiYQ==
