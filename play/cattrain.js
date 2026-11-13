@@ -848,7 +848,9 @@ const deco = (function () {
   };
 })();
 function saveDeco() { save(DECO_KEY, JSON.stringify(deco)); }
-let decoPass = false; // 이번 방문에서 광고를 봤는지 (새로 들어오면 다시 false)
+// 보상형 광고 승인 전에는 꾸미기를 광고 없이 모두 열어 둔다 (assets/ads-config.js의 decoFree)
+const DECO_FREE = !!(window.CATTRAIN_ADS && window.CATTRAIN_ADS.decoFree);
+let decoPass = DECO_FREE; // 이번 방문에서 광고를 봤는지 (새로 들어오면 다시 false)
 const owns = (kind, key) => (kind === 'fur' && PICK_FURS.includes(key)) || decoPass;
 
 const FUR_NAMES = { orange: '치즈', gray: '회색', white: '흰색', black: '검정', calico: '삼색', rudolph: '루돌프', snow: '눈송이', gold: '황금 복냥', sakura: '벚꽃' };
@@ -980,7 +982,7 @@ function renderShop() {
   sec('🐱 대장 냥이 털색', 'fur', PICK_FURS.map((f) => ['fur', f, FUR_NAMES[f] + ' (기본)', '']).concat(D.ITEMS.filter((i) => i[0] === 'fur')));
   sec('✨ 꼬리 장식', 'tail', D.ITEMS.filter((i) => i[0] === 'tail'));
   passBtn.hidden = decoPass;
-  $('shop-count').textContent = decoPass ? '✨ 지금은 모두 열려 있어요' : '';
+  if (!DECO_FREE) $('shop-count').textContent = decoPass ? '✨ 지금은 모두 열려 있어요' : '';
 }
 
 const passBtn = $('shop-pass');
@@ -991,6 +993,11 @@ passBtn.addEventListener('click', async () => {
   renderShop();
 });
 // 첫 화면 꾸미기 버튼 안에서 모자·꼬리 장식을 돌아가며 보여 준다 (눈에 띄게)
+if (DECO_FREE) {
+  $('shop-badge').textContent = '지금은 무료로 전부 골라요!';
+  $('shop-sub').textContent = '지금은 광고 없이 모두 골라 쓸 수 있어요 · 실력엔 영향 없어요';
+  $('shop-note').textContent = '고른 꾸미기는 이 기기에 저장돼 다음에 와도 그대로 쓰고 있고, 같이 하기에서 다른 사람에게도 보여요. 쓰는 중인 것을 한 번 더 누르면 벗어요.';
+}
 const shopBtnPic = miniCanvas(120, 64);
 $('shop-btn-pic').append(shopBtnPic.c);
 const SHOWCASE = [['santa', 'firework', 'gold'], ['gat', 'saekdong', 'orange'], ['sombrero', 'stars', 'calico'], ['antler', 'lights', 'rudolph'], ['sakura', 'petals', 'sakura'], ['party', 'snow', 'snow']];
@@ -1131,7 +1138,11 @@ function showResult(info) {
 dialog.addEventListener('close', () => {
   if (state !== 'result') return;
   if (dialog.returnValue === 'deco') { shopFromResult = true; openShop(); return; }
-  // 이어하기는 없앴다. 끝나면 언제나 새로 출발한다.
+  // 이어하기는 없앴다. 끝나면 언제나 판 사이 광고(있으면) 뒤에 새로 출발한다.
+  const go = () => restartRun();
+  if (window.showBreakAd) window.showBreakAd('game_over').then(go, go); else go();
+});
+function restartRun() {
   const cont = false;
   newRun(run.name, chosenFur);
   if (mode === 'online') {
@@ -1145,7 +1156,7 @@ dialog.addEventListener('close', () => {
     localJoin(cont);
     beginPlay();
   }
-});
+}
 dialog.addEventListener('cancel', (e) => { e.preventDefault(); });
 
 // ───── 반복 ─────

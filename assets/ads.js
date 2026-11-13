@@ -78,6 +78,25 @@
     });
   }
 
+  // 판과 판 사이 광고(H5 게임 광고 'next'). 구글이 보여 줄지·얼마나 자주·언제 건너뛸 수 있는지를 정한다.
+  // 게시자 ID가 없으면 아무것도 안 하고 바로 넘어간다. 광고가 끝나거나 없으면 Promise가 풀린다.
+  window.showBreakAd = function (name) {
+    if (!real || cfg.breakAd === false) return Promise.resolve(false);
+    return new Promise((res) => {
+      let started = false, done = false;
+      const finish = (v) => { if (!done) { done = true; res(v); } };
+      // 광고 스크립트가 막혀 있으면(광고 차단 등) 응답이 없으므로 3초 안에 시작 안 하면 그냥 넘어간다
+      setTimeout(() => { if (!started) finish(false); }, 3000);
+      adBreak({
+        type: 'next',
+        name: String(name || 'next').replace(/[^a-z0-9_]/gi, '_'),
+        beforeAd() { started = true; },
+        afterAd() {},
+        adBreakDone(info) { finish(!!(info && info.breakStatus === 'viewed')); },
+      });
+    });
+  };
+
   window.showRewardedAd = function (name, label) {
     if (!real) {
       return ask(label).then((yes) => (yes ? fakeAd() : false));
