@@ -186,9 +186,6 @@ body.cattrain {
   font-size: 20px;
 }
 
-#result button.continue { background: #4cb86b; font-size: 18px; line-height: 1.2; }
-#result button.continue small { display: block; font-size: 12px; color: #e8ffe8; }
-#result button.continue[hidden] { display: none; }
 
 #result .other {
   display: block;

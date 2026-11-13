@@ -1124,7 +1124,6 @@ function showResult(info) {
     bestEl.textContent = '내 최고 기록 ' + best + '마리';
     bestEl.className = 'result-best';
   }
-  $('continue-btn').hidden = !info.canCont;
   dialog.returnValue = '';
   dialog.showModal();
 }
@@ -1132,10 +1131,9 @@ function showResult(info) {
 dialog.addEventListener('close', () => {
   if (state !== 'result') return;
   if (dialog.returnValue === 'deco') { shopFromResult = true; openShop(); return; }
-  const cont = dialog.returnValue === 'continue' && !run.continued;
-  // 이어하기는 나중에 보상형 광고를 붙일 자리. 지금은 한 판에 한 번 그냥 이어 할 수 있다.
-  if (cont) run.continued = true;
-  else newRun(run.name, chosenFur);
+  // 이어하기는 없앴다. 끝나면 언제나 새로 출발한다.
+  const cont = false;
+  newRun(run.name, chosenFur);
   if (mode === 'online') {
     if (net.ws && net.ws.readyState === 1) {
       joinOnline(cont);
