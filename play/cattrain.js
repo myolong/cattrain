@@ -198,17 +198,17 @@ const groundTile = (function () {
     }
     // 바람에 쓸린 눈 결
     g.strokeStyle = 'rgba(170,198,228,.35)'; g.lineWidth = 1.4; g.lineCap = 'round';
-    for (let k = 0; k < 40; k++) {
+    for (let k = 0; k < 18; k++) {
       const x = Math.random() * W, y = Math.random() * W, l = 8 + Math.random() * 14;
       g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - 2.5, x + l, y); g.stroke();
     }
     // 반짝이 눈 알갱이
-    for (let k = 0; k < 70; k++) {
+    for (let k = 0; k < 24; k++) {
       const x = Math.random() * W, y = Math.random() * W, r = 0.8 + Math.random() * 1.6;
       g.fillStyle = k % 4 ? 'rgba(160,190,225,.45)' : '#fff';
       g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
     }
-    for (let k = 0; k < 10; k++) {
+    for (let k = 0; k < 3; k++) {
       // 반짝 별
       const x = 10 + Math.random() * (W - 20), y = 10 + Math.random() * (W - 20), r = 2.5 + Math.random() * 2;
       g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 1.2;
@@ -217,7 +217,7 @@ const groundTile = (function () {
     // 고양이 발자국 줄
     for (let k = 0; k < 2; k++) {
       const x0 = 40 + Math.random() * (W - 160), y0 = 40 + Math.random() * (W - 80), a = (Math.random() - 0.5) * 0.8;
-      g.fillStyle = 'rgba(150,180,215,.45)';
+      g.fillStyle = 'rgba(150,180,215,.25)';
       for (let p = 0; p < 6; p++) {
         const px = x0 + Math.cos(a) * p * 16 + (p % 2 ? 0 : 0), py = y0 + Math.sin(a) * p * 16 + (p % 2 ? 6 : -6);
         g.save(); g.translate(px, py); g.rotate(a + Math.PI / 2);
@@ -225,17 +225,6 @@ const groundTile = (function () {
         for (let t = -1; t <= 1; t++) { g.beginPath(); g.arc(t * 2.7, -4.2, 1.2, 0, 7); g.fill(); }
         g.restore();
       }
-    }
-    // 작은 눈사람 하나
-    {
-      const x = 60 + Math.random() * (W - 120), y = 60 + Math.random() * (W - 120);
-      g.fillStyle = 'rgba(150,180,215,.35)'; g.beginPath(); g.ellipse(x + 2, y + 11, 11, 4, 0, 0, 7); g.fill();
-      g.fillStyle = '#fff'; g.strokeStyle = '#c9dbef'; g.lineWidth = 1.2;
-      g.beginPath(); g.arc(x, y + 4, 8, 0, 7); g.fill(); g.stroke();
-      g.beginPath(); g.arc(x, y - 7, 5.5, 0, 7); g.fill(); g.stroke();
-      g.fillStyle = '#333'; g.beginPath(); g.arc(x - 2, y - 8, 0.9, 0, 7); g.arc(x + 2, y - 8, 0.9, 0, 7); g.fill();
-      g.fillStyle = '#f08a2c'; g.beginPath(); g.moveTo(x, y - 6.5); g.lineTo(x + 4, y - 5.8); g.lineTo(x, y - 5.2); g.fill();
-      g.fillStyle = '#e8573a'; g.fillRect(x - 5, y - 2.5, 10, 2);
     }
     return ctx.createPattern(c, 'repeat');
   }
@@ -257,27 +246,20 @@ const groundTile = (function () {
     }
     // 짧은 풀잎 결
     g.strokeStyle = 'rgba(190,140,70,.22)'; g.lineWidth = 1.3; g.lineCap = 'round';
-    for (let k = 0; k < 110; k++) {
+    for (let k = 0; k < 40; k++) {
       const x = Math.random() * W, y = Math.random() * W, h = 3 + Math.random() * 4, t = (Math.random() - 0.5) * 0.8;
       g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.sin(t) * h, y - Math.cos(t) * h); g.stroke();
     }
     // 낙엽 (가장자리를 넘어가도 이어지게 그린다)
-    for (let k = 0; k < 30; k++) {
-      const x = Math.random() * W, y = Math.random() * W, a = Math.random() * 7, r = 8 + Math.random() * 5;
+    for (let k = 0; k < 7; k++) {
+      const x = Math.random() * W, y = Math.random() * W, a = Math.random() * 7, r = 13 + Math.random() * 6;
       const ginkgo = k % 4 === 3, col = LEAF_COLORS[k % LEAF_COLORS.length];
       wrap((ox, oy) => {
         if (x + ox < -20 || x + ox > W + 20 || y + oy < -20 || y + oy > W + 20) return;
-        g.globalAlpha = 0.9;
+        g.globalAlpha = 0.3;
         if (ginkgo) drawGinkgo(g, x + ox, y + oy, r * 0.9, a); else drawLeaf(g, x + ox, y + oy, r, a, col);
         g.globalAlpha = 1;
       });
-    }
-    // 도토리
-    for (let k = 0; k < 4; k++) {
-      const x = 30 + Math.random() * (W - 60), y = 30 + Math.random() * (W - 60);
-      g.fillStyle = '#a8713a'; g.beginPath(); g.ellipse(x, y + 2, 3.4, 4.2, 0, 0, 7); g.fill();
-      g.fillStyle = '#6e4622'; g.beginPath(); g.ellipse(x, y - 1.6, 4, 2.2, 0, 0, 7); g.fill();
-      g.strokeStyle = '#6e4622'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y - 3.5); g.lineTo(x + 1, y - 5.5); g.stroke();
     }
     return ctx.createPattern(c, 'repeat');
   }
@@ -294,11 +276,11 @@ const groundTile = (function () {
 })();
 
 // 화면 위로 내리는 눈송이 (화면 기준이라 서버와 상관없다)
-const flakes = SNOW ? Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random(), r: 1.5 + Math.random() * 2.5, v: 0.05 + Math.random() * 0.07, w: Math.random() * 6 })) : [];
+const flakes = SNOW ? Array.from({ length: 35 }, () => ({ x: Math.random(), y: Math.random(), r: 1.5 + Math.random() * 2.5, v: 0.05 + Math.random() * 0.07, w: Math.random() * 6 })) : [];
 // 가을에는 낙엽이 천천히 빙글빙글 떨어진다
-const leaves = FALL ? Array.from({ length: 10 }, (_, i) => ({ x: Math.random(), y: Math.random(), r: 9 + Math.random() * 5, v: 0.04 + Math.random() * 0.04, w: Math.random() * 6, a: Math.random() * 7, c: LEAF_COLORS[i % LEAF_COLORS.length], ginkgo: i % 4 === 3 })) : [];
+const leaves = FALL ? Array.from({ length: 5 }, (_, i) => ({ x: Math.random(), y: Math.random(), r: 12 + Math.random() * 5, v: 0.035 + Math.random() * 0.04, w: Math.random() * 6, a: Math.random() * 7, c: LEAF_COLORS[i % LEAF_COLORS.length], ginkgo: i % 4 === 3 })) : [];
 function drawLeaffall(dt) {
-  ctx.globalAlpha = 0.9;
+  ctx.globalAlpha = 0.55;
   for (const f of leaves) {
     f.y += f.v * dt;
     f.a += dt * (0.8 + f.w * 0.15);
@@ -309,7 +291,7 @@ function drawLeaffall(dt) {
   ctx.globalAlpha = 1;
 }
 function drawSnowfall(dt) {
-  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.fillStyle = 'rgba(255,255,255,.7)';
   for (const f of flakes) {
     f.y += f.v * dt * (0.6 + f.r / 4);
     if (f.y > 1.02) { f.y = -0.02; f.x = Math.random(); }
