@@ -937,6 +937,15 @@ function drawEmote(t, msg, z) {
   text(msg, t.x, y, fs, '#8a4a12');
 }
 
+const OWNER = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get('owner');
+    if (q === 'on') localStorage.setItem('ct-owner', '1');
+    if (q === 'off') localStorage.removeItem('ct-owner');
+    return localStorage.getItem('ct-owner') === '1';
+  } catch (e) { return false; }
+})();
+
 function drawHud() {
   const top = 12 + safeTop;
   const my = scene.my;
@@ -944,7 +953,8 @@ function drawHud() {
   drawSprite(sprites.cream.happy, 38, top + 30, 13, -Math.PI / 2);
   text('아기냥', 60, top + 18, 13, '#8a4a12', 'left');
   text((my ? my.len : 0) + '마리', 60, top + 41, 22, '#e36d0e', 'left');
-  if (mode === 'online') {
+  // 접속자 수: 친구 방에서는 늘 보이고, 모두와 하기에서는 운영자 기기(?owner=on 한 번 접속)에서만 보인다.
+  if (mode === 'online' && (typeof net.room === 'string' || OWNER)) {
     ctx.fillStyle = 'rgba(255,255,255,.85)'; rrect(12, top + 68, 150, 24, 12); ctx.fill();
     text((typeof net.room === 'string' ? '👫 친구 방 · ' : '👥 지금 ') + scene.hc + '명 놀이 중', 87, top + 80, 12.5, '#2f7a3f');
   }
