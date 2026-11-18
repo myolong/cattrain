@@ -29,3 +29,9 @@ body.page { max-width: 640px; }
 .page footer { margin: 40px 0 0; padding: 18px 0 28px; border-top: 2px solid var(--line); color: var(--muted); font-size: 13px; text-align: center; }
 .page footer a { color: var(--muted); margin: 0 6px; }
 .page a { color: #c96a1b; }
+
+.page .more-game { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; padding: 10px; background: #fff7ec; border: 3px solid #ffc9a8; border-radius: 18px; text-decoration: none; color: #6b4022; box-shadow: 0 4px 0 #f0b58c; }
+.page .more-game img { width: 132px; height: auto; border-radius: 12px; flex: none; }
+.page .more-game span { display: flex; flex-direction: column; font-size: 13px; line-height: 1.45; }
+.page .more-game small { color: #b26a3a; font-size: 12px; }
+.page .more-game b { font-family: 'Jua', sans-serif; font-weight: 400; font-size: 21px; color: #d9541e; }
