@@ -326,3 +326,6 @@ body.cattrain {
 }
 .emote-menu button:last-child:nth-child(odd) { grid-column: span 2; }
 .emote-menu button:active { background: #ffe7cf; }
+
+/* 다른 게임 링크 */
+#result .other.bungeo { background: #ffe1c4; color: #d9541e; }
