@@ -388,10 +388,16 @@ let pred = null;
 // 주소 끝에 ?debug 를 붙이면 연결 상태를 화면에 보여 준다.
 const debug = { on: /[?&]debug/.test(location.search), err: 0, snaps: 0, fps: 60, bytes: 0 };    // 내 기차는 내 폰에서 먼저 움직이고, 서버 위치에 조금씩 맞춘다
 
+// 하루 접속자 세기용 무작위 번호 (assets/visit.js). 운영자 기기는 o=1 로 보내 세지 않는다.
+function visitParam() {
+  const v = window.CT_VISIT;
+  return v && v.vid ? '&v=' + v.vid + (v.owner ? '&o=1' : '') : '';
+}
+
 function connect(onReady, onFail) {
   let settled = false;
   let ws;
-  try { ws = new WebSocket(SERVER.replace(/^http/, 'ws') + '/ws?room=' + net.room); } catch (e) { onFail(); return; }
+  try { ws = new WebSocket(SERVER.replace(/^http/, 'ws') + '/ws?room=' + net.room + visitParam()); } catch (e) { onFail(); return; }
   net.ws = ws;
   const timer = setTimeout(() => { if (!settled) { settled = true; try { ws.close(); } catch (e) {} onFail(); } }, 10000);
   ws.onopen = () => { if (settled) return; settled = true; clearTimeout(timer); onReady(); };

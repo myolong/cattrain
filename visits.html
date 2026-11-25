@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>접속자 수</title>
+  <style>
+    :root { --bg: #fff8ef; --card: #fff; --ink: #5a3410; --sub: #a0764a; --accent: #e36d0e; --line: #f1dfc8; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #1f1812; --card: #2a2119; --ink: #f6e4cf; --sub: #c9a37c; --accent: #ff9a45; --line: #3d3025; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+    main { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .note { color: var(--sub); font-size: 13px; margin: 0 0 18px; line-height: 1.5; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+    .tile b { display: block; font-size: 28px; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .tile span { font-size: 13px; color: var(--sub); }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-variant-numeric: tabular-nums; }
+    th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: right; font-size: 14px; }
+    th:first-child, td:first-child { text-align: left; }
+    th { font-size: 12px; color: var(--sub); font-weight: 600; }
+    tr:last-child td { border-bottom: 0; }
+    .msg { padding: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-size: 14px; line-height: 1.6; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>📊 꼬리기차 접속자 수</h1>
+  <p class="note">한국 날짜 기준, 브라우저 하나를 하루 한 번 셉니다. 운영자 기기는 빠집니다.<br>방문 = 사이트를 연 사람, 같이 하기 = 실제로 게임 서버에 들어온 사람.</p>
+  <div id="out"><div class="msg">불러오는 중… (서버가 자고 있으면 몇 초 걸려요)</div></div>
+  <p class="note" style="margin-top:18px"><a href="play/">← 게임으로</a></p>
+</main>
+<script>
+(function () {
+  var SERVER = 'https://nyangnyang-cattrain.fly.dev';
+  var out = document.getElementById('out');
+  var key = '';
+  try {
+    var q = new URLSearchParams(location.search).get('key');
+    if (q) localStorage.setItem('ct-owner-key', q);
+    key = localStorage.getItem('ct-owner-key') || '';
+  } catch (e) {}
+  function msg(t) { out.innerHTML = '<div class="msg"></div>'; out.firstChild.textContent = t; }
+  if (!key) { msg('운영자 열쇠가 없는 기기예요. 안내받은 주소로 한 번 열어 주세요.'); return; }
+  fetch(SERVER + '/visits?k=' + encodeURIComponent(key), { cache: 'no-store' }).then(function (r) {
+    if (r.status === 403) throw new Error('key');
+    if (!r.ok) throw new Error('http');
+    return r.json();
+  }).then(function (d) {
+    var h = '<div class="tiles"><div class="tile"><b>' + d.last7.visitors + '</b><span>최근 7일 방문 (중복 빼고)</span></div>'
+      + '<div class="tile"><b>' + d.last7.players + '</b><span>최근 7일 같이 하기</span></div></div>';
+    h += '<table><thead><tr><th>날짜</th><th>방문</th><th>같이 하기</th></tr></thead><tbody>';
+    if (!d.days.length) h += '<tr><td colspan="3">아직 기록이 없어요</td></tr>';
+    d.days.forEach(function (r) { h += '<tr><td>' + r.day + (r.day === d.today ? ' (오늘)' : '') + '</td><td>' + r.visitors + '</td><td>' + r.players + '</td></tr>'; });
+    out.innerHTML = h + '</tbody></table>';
+  }).catch(function (e) {
+    msg(e.message === 'key' ? '열쇠가 맞지 않아요.' : '서버에 연결하지 못했어요. 잠시 뒤 다시 열어 주세요.');
+  });
+})();
+</script>
+</body>
+</html>
