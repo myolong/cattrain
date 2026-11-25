@@ -329,3 +329,7 @@ body.cattrain {
 
 /* 다른 게임 링크 */
 #result .other.bungeo { background: #ffe1c4; color: #d9541e; }
+
+/* 운영자 기기에서만 보이는 접속자 보기 링크 */
+.owner-stats { display: block; margin-top: 10px; text-align: center; font-size: 13px; color: #2f7a3f; }
+.owner-stats[hidden] { display: none; }
